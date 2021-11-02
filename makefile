@@ -31,6 +31,7 @@ ARCHIVER = ar
 .PHONY: clean
 
 all: release
+lib-static: lib-static-release
 lib-static-debug: DEFINES += $(DEBUG_DEFINES)
 lib-static-debug: $(TARGET_STATIC_LIB)
 lib-static-release: DEFINES += $(RELEASE_DEFINES)
