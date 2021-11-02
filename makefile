@@ -1,4 +1,4 @@
-TARGET_STATIC_LIB = ./lib/safemem.a
+TARGET_STATIC_LIB = ./lib/bufferlib.a
 TARGET_STATIC_LIB_DIR = ./lib
 TARGET = main
 
