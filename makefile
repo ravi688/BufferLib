@@ -4,7 +4,7 @@ TARGET = main
 
 #Dependencies
 DEPENDENCY_LIBS = 
-DEPENDENCY_INCLUDES = ./dependencies/ ./dependencies/CallTrace/include
+DEPENDENCY_INCLUDES = ./dependencies/ ../../shared-dependencies/CallTrace/include
 
 INCLUDES= -I.\include $(addprefix -I, $(DEPENDENCY_INCLUDES))
 SOURCES= $(wildcard source/*.c)
