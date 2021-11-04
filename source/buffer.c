@@ -623,7 +623,7 @@ function_signature(bool, BUFremove_noshift, void* object, bool (*comparer)(void*
 	uint8_t* cursor = binded_buffer->bytes; 
 	for(int i = 0; i < binded_buffer->element_count; i++, cursor += binded_buffer->element_size)
 	{
-		if(comparer(cursor, object))
+		if(comparer(object, cursor))
 		{
 			memset(cursor, 0, binded_buffer->element_size); 
 			if(BUFis_auto_managed())
@@ -645,7 +645,7 @@ function_signature(bool, BUFremove, void* object, bool (*comparer)(void*, void*)
 	uint8_t* cursor = binded_buffer->bytes; 
 	for(int i = 0; i < binded_buffer->element_count; i++, cursor += binded_buffer->element_size)
 	{
-		if(comparer(cursor, object))
+		if(comparer(object, cursor))
 		{
 			memcpy(cursor, cursor + binded_buffer->element_size, (binded_buffer->element_count - i - 1) * binded_buffer->element_size); 
 			memset(BUFpeek_ptr(), 0, binded_buffer->element_size); 
