@@ -369,13 +369,19 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 #	endif
 #endif
 
-#ifdef BUF_RELEASE
-#	if defined(BUF_DEBUG)
-#		undef(BUF_DEBUG)
-#	endif
+#if  defined(GLOBAL_DEBUG) && !defined(BUF_DEBUG)
+#define BUF_DEBUG 
 #endif
 
-#if !defined(BUF_RELEASE) && !defined(BUF_DEBUG)
+#if defined(GLOBAL_RELEASE) && !defined(BUF_RELEASE)
+#define BUF_RELEASE
+#endif
+
+#if defined(BUF_RELEASE) && defined(BUF_DEBUG)
+#	warning "Both of BUF_RELEASE && BUF_DEBUG are defined; using BUF_DEBUG"
+# undef BUF_RELEASE
+#elif !defined(BUF_RELEASE) && !defined(BUF_DEBUG)
+#	warning "None of BUF_RELEASE && BUF_DEBUG is defined; using BUF_DEBUG"
 #	define BUF_DEBUG
 #endif
 
