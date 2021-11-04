@@ -1,0 +1,3 @@
+[submodule "dependencies/CallTrace"]
+	path = dependencies/CallTrace
+	url = https://github.com/ravi688/CallTrace
