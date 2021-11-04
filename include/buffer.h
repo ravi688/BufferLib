@@ -395,7 +395,7 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 #			ifndef CALLTRACE_RELEASE
 #				define CALLTRACE_RELEASE
 #			endif
-#			define GOOD_ASSERT(bool_value, string, ...) do { if(!(bool_value)) return __VA_ARGS__; } while(false)
+#			define GOOD_ASSERT(bool_value, string, ...)
 #		endif
 #	elif defined(USE_LEGACY)
 #			ifndef CALLTRACE_RELEASE
