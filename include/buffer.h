@@ -315,7 +315,7 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 /*included in version 1.5*/
 #define BUF_NOT_INCLUDE_COMMON_UTILITIES
 /*included in version 1.5*/
-#define BUF_DEBUG 
+// #define BUF_DEBUG 
 
 /*********************************************************************/
 
