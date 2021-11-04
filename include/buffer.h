@@ -36,7 +36,8 @@
 	1_3
 	1_4
 	1_5
-	1_6 (this)
+	1_6
+	1_7 (this)
 */
 
 /*
@@ -287,6 +288,9 @@ In version 1_6:
 				105. buf_set_auto_managed()
 				106. buf_is_stack_allocated()
 				107. buf_is_heap_allocated()
+	In version 1_7:
+		1. typedef BUFFER* pBUFFER
+		2. BUF_INVALID macro
 */
 
 /*Future modifications:
@@ -317,7 +321,7 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 
 
 
-#define BUFFER_LIB_VERSION 0x0016 //1.6 (this)
+#define BUFFER_LIB_VERSION 0x0017 //1.7 (this)
 
 
 #if BUFFER_LIB_VERSION >= 0x0011
@@ -603,6 +607,15 @@ void some_function()
 #endif
 
 typedef struct __BUFFER BUFFER;
+
+#if BUFFER_LIB_VERSION >= 0x0017
+	typedef BUFFER* pBUFFER;
+#	ifdef __cplusplus
+#		define BUF_INVALID nullptr
+#	else
+#		define BUF_INVALID NULL
+#	endif
+#endif
 
 #ifdef __cplusplus
 extern "C" { 
