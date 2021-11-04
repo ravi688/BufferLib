@@ -291,6 +291,7 @@ In version 1_6:
 	In version 1_7:
 		1. typedef BUFFER* pBUFFER
 		2. BUF_INVALID macro
+		3. added CallTrace submodule and  include<calltrace.h>
 */
 
 /*Future modifications:
@@ -380,25 +381,24 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 
 #	ifndef USE_LEGACY
 #		ifdef BUF_DEBUG
-#			define function_signature_void(return_type, function_name) return_type __##function_name(uint64_t line_no, const char* caller_name, const char* file_name)
-#			define function_signature(return_type, function_name, ...)  return_type __##function_name(__VA_ARGS__, uint64_t line_no, const char* caller_name, const char* file_name)
-#			define define_alias_function_void_macro(function_name) __##function_name(__LINE__, __FUNCTION__, __FILE__)
-#			define define_alias_function_macro(function_name, ...) __##function_name(__VA_ARGS__, __LINE__, __FUNCTION__, __FILE__)
-#			define GOOD_ASSERT(bool_value, string, ...) do { if(!(bool_value)) {  printf("[Error] %s, at %lu, %s, %s\n", string, line_no, caller_name, file_name); exit(-1); } } while(false)
+#			ifndef CALLTRACE_DEBUG
+#				define CALLTRACE_DEBUG
+#			endif
+#			define GOOD_ASSERT(bool_value, string, ...) do { if(!(bool_value)) {  printf("[Error] %s, at %lu, %s, %s\n", string, __line__, __function__, __file__); exit(-1); } } while(false)
 #		elif defined(BUF_RELEASE)
-#			define function_signature_void(return_type, function_name) return_type function_name()
-#			define function_signature(return_type, function_name, ...) return_type function_name(__VA_ARGS__)
-#			define define_alias_function_macro(function_name, ...) function_name(__VA_ARGS__)
-#			define define_alias_function_void_macro(function_name) function_name()
+#			ifndef CALLTRACE_RELEASE
+#				define CALLTRACE_RELEASE
+#			endif
 #			define GOOD_ASSERT(bool_value, string, ...) do { if(!(bool_value)) return __VA_ARGS__; } while(false)
 #		endif
 #	elif defined(USE_LEGACY)
-#			define function_signature_void(return_type, function_name) return_type function_name()
-#			define function_signature(return_type, function_name, ...) return_type function_name(__VA_ARGS__)
-#			define define_alias_function_macro(function_name, ...) function_name(__VA_ARGS__)
-#			define define_alias_function_void_macro(function_name) function_name()
+#			ifndef CALLTRACE_RELEASE
+#				define CALLTRACE_RELEASE
+#			endif
 #			define GOOD_ASSERT BUF_ASSERT
 #	endif/*USE_LEGACY*/
+
+#include <calltrace.h>
 
 
 
