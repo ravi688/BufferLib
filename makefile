@@ -183,7 +183,6 @@ debug: $(TARGET)
 
 
 %.o : %.c
-	@echo [Log] Compiling $< to $@
 	$(COMPILER) $(COMPILER_FLAGS) $(DEFINES) $(INCLUDES) -c $< -o $@
 
 %.a:
@@ -231,7 +230,7 @@ bin-clean:
 	$(RM) $(TARGET_DYNAMIC_IMPORT_LIB)
 	$(RM_DIR) $(TARGET_LIB_DIR)
 	@echo [Log] Binaries cleaned successfully!
-	$(MAKE) --directory=./dependencies/CallTrace clean
+	$(MAKE) --directory=../../shared-dependencies/CallTrace clean
 #-------------------------------------------
 
 
