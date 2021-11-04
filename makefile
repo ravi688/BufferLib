@@ -37,8 +37,10 @@ lib-static-debug: $(TARGET_STATIC_LIB)
 lib-static-release: DEFINES += $(RELEASE_DEFINES)
 lib-static-release: $(TARGET_STATIC_LIB)
 release: DEFINES += $(RELEASE_DEFINES)
+release: __STATIC_LIB_COMMAND = lib-static-release
 release: $(TARGET)
 debug: DEFINES += $(DEBUG_DEFINES)
+debug: __STATIC_LIB_COMMAND = lib-static-debug
 debug: $(TARGET)
 
 
@@ -47,7 +49,7 @@ debug: $(TARGET)
 
 ./dependencies/%.a:
 	@echo [Log] Building $@ ...
-	$(MAKE) --directory=$(subst lib/, ,$(dir $@)) lib-static
+	$(MAKE) --directory=$(subst lib/, ,$(dir $@)) $(__STATIC_LIB_COMMAND)
 	@echo [Log] $@ built successfully!
 
 $(TARGET_STATIC_LIB_DIR): 
