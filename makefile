@@ -39,8 +39,10 @@ lib-static-release: DEFINES += $(RELEASE_DEFINES)
 lib-static-release: __STATIC_LIB_COMMAND = lib-static-release
 lib-static-release: $(TARGET_STATIC_LIB)
 release: DEFINES += $(RELEASE_DEFINES)
+release: __STATIC_LIB_COMMAND = lib-static-release
 release: $(TARGET)
 debug: DEFINES += $(DEBUG_DEFINES)
+debug: __STATIC_LIB_COMMAND = lib-static-debug
 debug: $(TARGET)
 
 
