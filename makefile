@@ -33,15 +33,13 @@ ARCHIVER = ar
 all: release
 lib-static: lib-static-release
 lib-static-debug: DEFINES += $(DEBUG_DEFINES)
+lib-static-debug: __STATIC_LIB_COMMAND = lib-static-debug
 lib-static-debug: $(TARGET_STATIC_LIB)
 lib-static-release: DEFINES += $(RELEASE_DEFINES)
+lib-static-release: __STATIC_LIB_COMMAND = lib-static-release
 lib-static-release: $(TARGET_STATIC_LIB)
-release: DEFINES += $(RELEASE_DEFINES)
-release: __STATIC_LIB_COMMAND = lib-static-release
-release: $(TARGET)
-debug: DEFINES += $(DEBUG_DEFINES)
-debug: __STATIC_LIB_COMMAND = lib-static-debug
-debug: $(TARGET)
+release: lib-static-release $(TARGET)
+debug: lib-static-debug $(TARGET)
 
 
 %.o : %.c
@@ -63,7 +61,7 @@ $(TARGET_STATIC_LIB) : PRINT_MESSAGE $(filter-out source/main.o, $(OBJECTS)) | $
 	@echo [Log] $@ built successfully!
 
 
-$(TARGET): $(DEPENDENCY_LIBS) $(TARGET_STATIC_LIB) source/main.o
+$(TARGET): $(DEPENDENCY_LIBS) source/main.o
 	$(COMPILER) $(COMPILER_FLAGS) source/main.o $(LIBS) \
 	$(addprefix -L, $(dir $(DEPENDENCY_LIBS) $(TARGET_STATIC_LIB))) \
 	$(addprefix -l:, $(notdir $(DEPENDENCY_LIBS) $(TARGET_STATIC_LIB))) \
