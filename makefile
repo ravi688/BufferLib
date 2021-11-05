@@ -38,8 +38,12 @@ lib-static-debug: $(TARGET_STATIC_LIB)
 lib-static-release: DEFINES += $(RELEASE_DEFINES)
 lib-static-release: __STATIC_LIB_COMMAND = lib-static-release
 lib-static-release: $(TARGET_STATIC_LIB)
-release: lib-static-release $(TARGET)
-debug: lib-static-debug $(TARGET)
+release: lib-static-release
+release: DEFINES += $(RELEASE_DEFINES)
+release: $(TARGET)
+debug: lib-static-debug
+debug: DEFINES += $(DEBUG_DEFINES)
+debug: $(TARGET)
 
 
 %.o : %.c
