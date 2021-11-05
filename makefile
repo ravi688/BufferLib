@@ -24,7 +24,7 @@ ARCHIVER = ar
 
 .PHONY: lib-static
 .PHONY: lib-static-debug
-.PHONY: lib-release-debug
+.PHONY: lib-static-release
 .PHONY: release
 .PHONY: debug
 .PHONY: $(TARGET)	
