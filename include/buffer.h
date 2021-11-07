@@ -345,7 +345,6 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 typedef UCOUNT_TYPE buf_ucount_t;
 typedef COUNT_TYPE buf_count_t;
 #define BUF_INVALID_INDEX ((buf_ucount_t)(-1))
-
 #define BUF_BUFFER_OBJECT_SIZE BUFget_buffer_object_size()
 #define BUFget_bottom() BUFget_ptr()
 #define BUFget_top() BUFpeek_ptr()
@@ -415,7 +414,7 @@ typedef COUNT_TYPE buf_count_t;
 
 typedef struct BUFFER 
 {
-	uint8_t* bytes;
+	void* bytes;
 	buf_ucount_t info; 
 	buf_ucount_t capacity;
 	buf_ucount_t element_count;		
@@ -440,11 +439,9 @@ function_signature(void, BUFbind, BUFFER* buffer);
 function_signature_void(void, BUFunbind);
 function_signature_void(void, BUFlog);
 function_signature(void, BUFtraverse_elements, buf_ucount_t start, buf_ucount_t end, void (*func)(void* /*element ptr*/, void* /*args ptr*/), void* args);
-function_signature(bool, BUFisStackAllocated, BUFFER* buffer); 
-function_signature(bool, BUFisHeapAllocated, BUFFER* buffer);
 function_signature_void(void, BUFfree); 
-function_signature(BUFFER*, BUFcreate_object, uint8_t* bytes);
-function_signature(BUFFER*, BUFcreate, BUFFER* __buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset);
+function_signature(BUFFER*, BUFcreate_object, void* bytes);
+function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset);
 function_signature_void(void, BUFfit);
 function_signature(void, BUFpeek, void* out_value);  
 function_signature_void(void*, BUFpeek_ptr); 
@@ -460,16 +457,16 @@ function_signature(void, BUFinsert_at_noalloc, buf_ucount_t index , void* in_val
 function_signature(buf_ucount_t, BUFfind_index_of, void* value, bool (*comparer)(void*, void*));
 function_signature(void, BUFset_at, buf_ucount_t index , void* in_value);
 function_signature(void, BUFset_capacity, buf_ucount_t capacity);
-function_signature(void, BUFset_ptr, uint8_t* ptr); 
+function_signature(void, BUFset_ptr, void* ptr); 
 function_signature(void, BUFset_element_count, buf_ucount_t element_count); 
 function_signature(void, BUFset_offset, buf_ucount_t offset);
-function_signature(void, BUFset_offset_bytes, uint8_t* offset_bytes);
+function_signature(void, BUFset_offset_bytes, void* offset_bytes);
 function_signature(void, BUFset_element_size, buf_ucount_t element_size);
 function_signature(void, BUFset_auto_managed, bool value);
 function_signature(void, BUFget_at, buf_ucount_t index, void* out_value);
 function_signature(void*, BUFgetptr_at, buf_ucount_t index);
-function_signature(BUFFER*, BUFcopy_to, BUFFER* destination);
-function_signature(BUFFER*, BUFmove_to, BUFFER* destination);
+function_signature(void, BUFcopy_to, BUFFER* destination);
+function_signature(void, BUFmove_to, BUFFER* destination);
 function_signature(BUFFER*, BUFcopy_construct, BUFFER* source);
 function_signature(void, BUFset_on_free, void (*free)(void*));
 function_signature(void, BUFresize, buf_ucount_t new_capacity);
@@ -492,63 +489,163 @@ function_signature(void, BUFset_on_post_resize, void (*on_post_resize)(void));
 function_signature(void, BUFset_on_pre_resize, void (*on_pre_resize)(void));
 function_signature_void(uint64_t, BUFget_buffer_object_size);
 
-#define BUFreverseb(...) 									define_alias_function_macro(BUFreverseb, __VA_ARGS__)
-#define BUFisHeapAllocated(...) 					define_alias_function_macro(BUFisHeapAllocated, __VA_ARGS__)
-#define BUFisStackAllocated(...) 					define_alias_function_macro(BUFisStackAllocated, __VA_ARGS__)
-#define BUFbind(...) 											define_alias_function_macro(BUFbind, __VA_ARGS__)
-#define BUFcreate_object(...) 						define_alias_function_macro(BUFcreate_object, __VA_ARGS__)
-#define BUFcreate(...) 										define_alias_function_macro(BUFcreate, __VA_ARGS__)
-#define BUFget_at(...) 										define_alias_function_macro(BUFget_at, __VA_ARGS__)
-#define BUFset_at(...) 										define_alias_function_macro(BUFset_at, __VA_ARGS__)
-#define BUFgetptr_at(...) 								define_alias_function_macro(BUFgetptr_at, __VA_ARGS__)
-#define BUFpop(...) 											define_alias_function_macro(BUFpop, __VA_ARGS__)
-#define BUFpush(...) 											define_alias_function_macro(BUFpush, __VA_ARGS__)
-#define BUFremove(...) 										define_alias_function_macro(BUFremove, __VA_ARGS__)
-#define BUFremove_noshift(...) 						define_alias_function_macro(BUFremove_noshift, __VA_ARGS__)
-#define BUFclear(...) 										define_alias_function_macro(BUFclear, __VA_ARGS__)
-#define BUFremove_at_noshift(...) 				define_alias_function_macro(BUFremove_at_noshift, __VA_ARGS__)
-#define BUFremove_at(...) 								define_alias_function_macro(BUFremove_at, __VA_ARGS__)
-#define BUFinsert_at(...) 								define_alias_function_macro(BUFinsert_at, __VA_ARGS__)
-#define BUFinsert_at_noalloc(...) 				define_alias_function_macro(BUFinsert_at_noalloc, __VA_ARGS__)
-#define BUFfind_index_of(...) 						define_alias_function_macro(BUFfind_index_of, __VA_ARGS__)
-#define BUFset_ptr(...) 									define_alias_function_macro(BUFset_ptr, __VA_ARGS__)
-#define BUFset_auto_managed(...) 					define_alias_function_macro(BUFset_auto_managed, __VA_ARGS__)
-#define BUFset_offset(...) 								define_alias_function_macro(BUFset_offset, __VA_ARGS__)
-#define BUFresize(...) 										define_alias_function_macro(BUFresize, __VA_ARGS__)
-#define BUFclear_buffer(...) 							define_alias_function_macro(BUFclear_buffer, __VA_ARGS__)
-#define BUFtraverse_elements(...) 				define_alias_function_macro(BUFtraverse_elements, __VA_ARGS__)
-#define BUFset_offset_bytes(...) 					define_alias_function_macro(BUFset_offset_bytes, __VA_ARGS__)
-#define BUFget_offset_bytes()							define_alias_function_void_macro(BUFget_offset_bytes)
-#define BUFset_capacity(...) 							define_alias_function_macro(BUFset_capacity, __VA_ARGS__)
-#define BUFset_element_count(...)  				define_alias_function_macro(BUFset_element_count, __VA_ARGS__)
-#define BUFset_element_size(...)   				define_alias_function_macro(BUFset_element_size, __VA_ARGS__)
-#define BUFset_ptr(...)   								define_alias_function_macro(BUFset_ptr, __VA_ARGS__)
-#define BUFget_ptr()    									define_alias_function_void_macro(BUFget_ptr)
-#define BUFpeek(...) 											define_alias_function_macro(BUFpeek, __VA_ARGS__)
-#define BUFcopy_to(...)  									define_alias_function_macro(BUFcopy_to, __VA_ARGS__)
-#define BUFmove_to(...)    								define_alias_function_macro(BUFmove_to, __VA_ARGS__)
-#define BUFcopy_construct(...)      			define_alias_function_macro(BUFcopy_construct, __VA_ARGS__)
-#define BUFset_on_free(...)          			define_alias_function_macro(BUFset_on_free, __VA_ARGS__)
-#define BUFfit() 													define_alias_function_void_macro(BUFfit)
-#define BUFget_capacity() 								define_alias_function_void_macro(BUFget_capacity)
-#define BUFget_binded_buffer()				 		define_alias_function_void_macro(BUFget_binded_buffer)
-#define BUFget_buffer_size() 							define_alias_function_void_macro(BUFget_buffer_size)
-#define BUFpeek_ptr() 										define_alias_function_void_macro(BUFpeek_ptr)
-#define BUFunbind() 											define_alias_function_void_macro(BUFunbind)
-#define BUFlog() 													define_alias_function_void_macro(BUFlog)
-#define BUFfree() 												define_alias_function_void_macro(BUFfree)
-#define BUFget_element_count() 						define_alias_function_void_macro(BUFget_element_count)
-#define BUFget_element_size() 						define_alias_function_void_macro(BUFget_element_size)
-#define BUFget_clone() 										define_alias_function_void_macro(BUFget_clone)
-#define BUFget_offset() 									define_alias_function_void_macro(BUFget_offset)
-#define BUFis_auto_managed()  						define_alias_function_void_macro(BUFis_auto_managed)
-#define BUFpush_pseudo(...) 							define_alias_function_macro(BUFpush_pseudo, __VA_ARGS__)
-#define BUFpop_pseudo(...) 								define_alias_function_macro(BUFpop_pseudo, __VA_ARGS__)
-#define BUFinsert_pseudo(...) 						define_alias_function_macro(BUFinsert_pseudo, __VA_ARGS__)
-#define BUFremove_pseudo(...) 						define_alias_function_macro(BUFremove_pseudo, __VA_ARGS__)
-#define BUFset_on_post_resize(...) 				define_alias_function_macro(BUFset_on_post_resize, __VA_ARGS__)
-#define BUFset_on_pre_resize(...) 				define_alias_function_macro(BUFset_on_pre_resize, __VA_ARGS__)
-#define BUFget_buffer_object_size() 			define_alias_function_void_macro(BUFget_buffer_object_size)
+function_signature(void, buf_reverseb, BUFFER* buffer, void* ptr_to_buffer, buf_ucount_t element_size, buf_ucount_t element_count);
+function_signature(void, buf_log, BUFFER* buffer);
+function_signature(void, buf_traverse_elements, BUFFER* buffer, buf_ucount_t start, buf_ucount_t end, void (*func)(void* /*element ptr*/, void* /*args ptr*/), void* args);
+function_signature(void, buf_free, BUFFER* buffer); 
+function_signature(BUFFER, buf_create, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset);
+function_signature(void, buf_fit, BUFFER* buffer);
+function_signature(void, buf_peek, BUFFER* buffer, void* out_value);  
+function_signature(void*, buf_peek_ptr, BUFFER* buffer); 
+function_signature(void, buf_pop, BUFFER* buffer, void* out_value); 
+function_signature(void, buf_push, BUFFER* buffer, void* in_value); 
+function_signature(bool, buf_remove, BUFFER* buffer, void* object, bool (*comparer)(void*, void*));
+function_signature(bool, buf_remove_noshift, BUFFER* buffer, void* object, bool (*comparer)(void*, void*));
+function_signature(void, buf_clear, BUFFER* buffer, void* clear_value); 
+function_signature(bool, buf_remove_at_noshift, BUFFER* buffer, buf_ucount_t index , void* out_value);
+function_signature(bool, buf_remove_at, BUFFER* buffer, buf_ucount_t index , void* out_value);
+function_signature(void, buf_insert_at, BUFFER* buffer, buf_ucount_t index , void* in_value);
+function_signature(void, buf_insert_at_noalloc, BUFFER* buffer, buf_ucount_t index , void* in_value , void* out_value);
+function_signature(buf_ucount_t, buf_find_index_of, BUFFER* buffer, void* value, bool (*comparer)(void*, void*));
+function_signature(void, buf_set_at, BUFFER* buffer, buf_ucount_t index , void* in_value);
+function_signature(void, buf_set_capacity, BUFFER* buffer, buf_ucount_t capacity);
+function_signature(void, buf_set_ptr, BUFFER* buffer, void* ptr); 
+function_signature(void, buf_set_element_count, BUFFER* buffer, buf_ucount_t element_count); 
+function_signature(void, buf_set_offset, BUFFER* buffer, buf_ucount_t offset);
+function_signature(void, buf_set_offset_bytes, BUFFER* buffer, void* offset_bytes);
+function_signature(void, buf_set_element_size, BUFFER* buffer, buf_ucount_t element_size);
+function_signature(void, buf_set_auto_managed, BUFFER* buffer, bool value);
+function_signature(void, buf_get_at, BUFFER* buffer, buf_ucount_t index, void* out_value);
+function_signature(void*, buf_getptr_at, BUFFER* buffer, buf_ucount_t index);
+function_signature(void, buf_copy_to, BUFFER* buffer, BUFFER* destination);
+function_signature(void, buf_move_to, BUFFER* buffer, BUFFER* destination);
+function_signature(BUFFER, buf_copy_construct, BUFFER* source);
+function_signature(void, buf_set_on_free, BUFFER* buffer, void (*free)(void*));
+function_signature(void, buf_resize, BUFFER* buffer, buf_ucount_t new_capacity);
+function_signature(void, buf_clear_buffer, BUFFER* buffer, void* clear_value);
+function_signature(bool, buf_is_auto_managed, BUFFER* buffer);
+function_signature(buf_ucount_t, buf_get_capacity, BUFFER* buffer);
+function_signature(void*, buf_get_ptr, BUFFER* buffer); 
+function_signature(buf_ucount_t, buf_get_element_count, BUFFER* buffer);  
+function_signature(buf_ucount_t, buf_get_offset, BUFFER* buffer);
+function_signature(void*, buf_get_offset_bytes, BUFFER* buffer);
+function_signature(buf_ucount_t, buf_get_element_size, BUFFER* buffer);  
+function_signature(BUFFER, buf_get_clone, BUFFER* buffer);
+function_signature(buf_ucount_t, buf_get_buffer_size, BUFFER* buffer);
+function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count);
+function_signature(void, buf_pop_pseudo, BUFFER* buffer, buf_ucount_t count);
+function_signature(void, buf_insert_pseudo, BUFFER* buffer, buf_ucount_t index, buf_ucount_t count);
+function_signature(void, buf_remove_pseudo, BUFFER* buffer, buf_ucount_t index, buf_ucount_t count);
+function_signature(void, buf_set_on_post_resize, BUFFER* buffer, void (*on_post_resize)(void));
+function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*on_pre_resize)(void));
+
+
+#define BUFreverseb(...) 										define_alias_function_macro(BUFreverseb, __VA_ARGS__)
+#define BUFbind(...) 												define_alias_function_macro(BUFbind, __VA_ARGS__)
+#define BUFcreate_object(...) 							define_alias_function_macro(BUFcreate_object, __VA_ARGS__)
+#define BUFcreate(...) 											define_alias_function_macro(BUFcreate, __VA_ARGS__)
+#define BUFget_at(...) 											define_alias_function_macro(BUFget_at, __VA_ARGS__)
+#define BUFset_at(...) 											define_alias_function_macro(BUFset_at, __VA_ARGS__)
+#define BUFgetptr_at(...) 									define_alias_function_macro(BUFgetptr_at, __VA_ARGS__)
+#define BUFpop(...) 												define_alias_function_macro(BUFpop, __VA_ARGS__)
+#define BUFpush(...) 												define_alias_function_macro(BUFpush, __VA_ARGS__)
+#define BUFremove(...) 											define_alias_function_macro(BUFremove, __VA_ARGS__)
+#define BUFremove_noshift(...) 							define_alias_function_macro(BUFremove_noshift, __VA_ARGS__)
+#define BUFclear(...) 											define_alias_function_macro(BUFclear, __VA_ARGS__)
+#define BUFremove_at_noshift(...) 					define_alias_function_macro(BUFremove_at_noshift, __VA_ARGS__)
+#define BUFremove_at(...) 									define_alias_function_macro(BUFremove_at, __VA_ARGS__)
+#define BUFinsert_at(...) 									define_alias_function_macro(BUFinsert_at, __VA_ARGS__)
+#define BUFinsert_at_noalloc(...) 					define_alias_function_macro(BUFinsert_at_noalloc, __VA_ARGS__)
+#define BUFfind_index_of(...) 							define_alias_function_macro(BUFfind_index_of, __VA_ARGS__)
+#define BUFset_ptr(...) 										define_alias_function_macro(BUFset_ptr, __VA_ARGS__)
+#define BUFset_auto_managed(...) 						define_alias_function_macro(BUFset_auto_managed, __VA_ARGS__)
+#define BUFset_offset(...) 									define_alias_function_macro(BUFset_offset, __VA_ARGS__)
+#define BUFresize(...) 											define_alias_function_macro(BUFresize, __VA_ARGS__)
+#define BUFclear_buffer(...) 								define_alias_function_macro(BUFclear_buffer, __VA_ARGS__)
+#define BUFtraverse_elements(...) 					define_alias_function_macro(BUFtraverse_elements, __VA_ARGS__)
+#define BUFset_offset_bytes(...) 						define_alias_function_macro(BUFset_offset_bytes, __VA_ARGS__)
+#define BUFget_offset_bytes()								define_alias_function_void_macro(BUFget_offset_bytes)
+#define BUFset_capacity(...) 								define_alias_function_macro(BUFset_capacity, __VA_ARGS__)
+#define BUFset_element_count(...)  					define_alias_function_macro(BUFset_element_count, __VA_ARGS__)
+#define BUFset_element_size(...)   					define_alias_function_macro(BUFset_element_size, __VA_ARGS__)
+#define BUFset_ptr(...)   									define_alias_function_macro(BUFset_ptr, __VA_ARGS__)
+#define BUFget_ptr()    										define_alias_function_void_macro(BUFget_ptr)
+#define BUFpeek(...) 												define_alias_function_macro(BUFpeek, __VA_ARGS__)
+#define BUFcopy_to(...)  										define_alias_function_macro(BUFcopy_to, __VA_ARGS__)
+#define BUFmove_to(...)    									define_alias_function_macro(BUFmove_to, __VA_ARGS__)
+#define BUFcopy_construct(...)      				define_alias_function_macro(BUFcopy_construct, __VA_ARGS__)
+#define BUFset_on_free(...)          				define_alias_function_macro(BUFset_on_free, __VA_ARGS__)
+#define BUFfit() 														define_alias_function_void_macro(BUFfit)
+#define BUFget_capacity() 									define_alias_function_void_macro(BUFget_capacity)
+#define BUFget_binded_buffer()				 			define_alias_function_void_macro(BUFget_binded_buffer)
+#define BUFget_buffer_size() 								define_alias_function_void_macro(BUFget_buffer_size)
+#define BUFpeek_ptr() 											define_alias_function_void_macro(BUFpeek_ptr)
+#define BUFunbind() 												define_alias_function_void_macro(BUFunbind)
+#define BUFlog() 														define_alias_function_void_macro(BUFlog)
+#define BUFfree() 													define_alias_function_void_macro(BUFfree)
+#define BUFget_element_count() 							define_alias_function_void_macro(BUFget_element_count)
+#define BUFget_element_size() 							define_alias_function_void_macro(BUFget_element_size)
+#define BUFget_clone() 											define_alias_function_void_macro(BUFget_clone)
+#define BUFget_offset() 										define_alias_function_void_macro(BUFget_offset)
+#define BUFis_auto_managed()  							define_alias_function_void_macro(BUFis_auto_managed)
+#define BUFpush_pseudo(...) 								define_alias_function_macro(BUFpush_pseudo, __VA_ARGS__)
+#define BUFpop_pseudo(...) 									define_alias_function_macro(BUFpop_pseudo, __VA_ARGS__)
+#define BUFinsert_pseudo(...) 							define_alias_function_macro(BUFinsert_pseudo, __VA_ARGS__)
+#define BUFremove_pseudo(...) 							define_alias_function_macro(BUFremove_pseudo, __VA_ARGS__)
+#define BUFset_on_post_resize(...) 					define_alias_function_macro(BUFset_on_post_resize, __VA_ARGS__)
+#define BUFset_on_pre_resize(...) 					define_alias_function_macro(BUFset_on_pre_resize, __VA_ARGS__)
+#define BUFget_buffer_object_size() 				define_alias_function_void_macro(BUFget_buffer_object_size)
+
+#define buf_reverseb(...) 									define_alias_function_macro(buf_reverseb, __VA_ARGS__)
+#define buf_create(...) 										define_alias_function_macro(buf_create, __VA_ARGS__)
+#define buf_get_at(...) 										define_alias_function_macro(buf_get_at, __VA_ARGS__)
+#define buf_set_at(...) 										define_alias_function_macro(buf_set_at, __VA_ARGS__)
+#define buf_getptr_at(...) 									define_alias_function_macro(buf_getptr_at, __VA_ARGS__)
+#define buf_pop(...) 												define_alias_function_macro(buf_pop, __VA_ARGS__)
+#define buf_push(...) 											define_alias_function_macro(buf_push, __VA_ARGS__)
+#define buf_remove(...) 										define_alias_function_macro(buf_remove, __VA_ARGS__)
+#define buf_remove_noshift(...) 						define_alias_function_macro(buf_remove_noshift, __VA_ARGS__)
+#define buf_clear(...) 											define_alias_function_macro(buf_clear, __VA_ARGS__)
+#define buf_remove_at_noshift(...) 					define_alias_function_macro(buf_remove_at_noshift, __VA_ARGS__)
+#define buf_remove_at(...) 									define_alias_function_macro(buf_remove_at, __VA_ARGS__)
+#define buf_insert_at(...) 									define_alias_function_macro(buf_insert_at, __VA_ARGS__)
+#define buf_insert_at_noalloc(...) 					define_alias_function_macro(buf_insert_at_noalloc, __VA_ARGS__)
+#define buf_find_index_of(...) 							define_alias_function_macro(buf_find_index_of, __VA_ARGS__)
+#define buf_set_ptr(...) 										define_alias_function_macro(buf_set_ptr, __VA_ARGS__)
+#define buf_set_auto_managed(...) 					define_alias_function_macro(buf_set_auto_managed, __VA_ARGS__)
+#define buf_set_offset(...) 								define_alias_function_macro(buf_set_offset, __VA_ARGS__)
+#define buf_resize(...) 										define_alias_function_macro(buf_resize, __VA_ARGS__)
+#define buf_clear_buffer(...) 							define_alias_function_macro(buf_clear_buffer, __VA_ARGS__)
+#define buf_traverse_elements(...) 					define_alias_function_macro(buf_traverse_elements, __VA_ARGS__)
+#define buf_set_offset_bytes(...) 					define_alias_function_macro(buf_set_offset_bytes, __VA_ARGS__)
+#define buf_get_offset_bytes(...)						define_alias_function_macro(buf_get_offset_bytes, __VA_ARGS__)
+#define buf_set_capacity(...) 							define_alias_function_macro(buf_set_capacity, __VA_ARGS__)
+#define buf_set_element_count(...)  				define_alias_function_macro(buf_set_element_count, __VA_ARGS__)
+#define buf_set_element_size(...)   				define_alias_function_macro(buf_set_element_size, __VA_ARGS__)
+#define buf_set_ptr(...)   									define_alias_function_macro(buf_set_ptr, __VA_ARGS__)
+#define buf_get_ptr(...) 										define_alias_function_macro(buf_get_ptr, __VA_ARGS__)
+#define buf_peek(...) 											define_alias_function_macro(buf_peek, __VA_ARGS__)
+#define buf_copy_to(...)  									define_alias_function_macro(buf_copy_to, __VA_ARGS__)
+#define buf_move_to(...)    								define_alias_function_macro(buf_move_to, __VA_ARGS__)
+#define buf_copy_construct(...)      				define_alias_function_macro(buf_copy_construct, __VA_ARGS__)
+#define buf_set_on_free(...)          			define_alias_function_macro(buf_set_on_free, __VA_ARGS__)
+#define buf_fit(...) 												define_alias_function_macro(buf_fit, __VA_ARGS__)
+#define buf_get_capacity(...) 							define_alias_function_macro(buf_get_capacity, __VA_ARGS__)
+#define buf_get_buffer_size(...) 						define_alias_function_macro(buf_get_buffer_size, __VA_ARGS__)
+#define buf_peek_ptr(...) 									define_alias_function_macro(buf_peek_ptr, __VA_ARGS__)
+#define buf_log(...) 												define_alias_function_macro(buf_log, __VA_ARGS__)
+#define buf_free(...) 											define_alias_function_macro(buf_free, __VA_ARGS__)
+#define buf_get_element_count(...) 					define_alias_function_macro(buf_get_element_count, __VA_ARGS__)
+#define buf_get_element_size(...) 					define_alias_function_macro(buf_get_element_size, __VA_ARGS__)
+#define buf_get_clone(...) 									define_alias_function_macro(buf_get_clone, __VA_ARGS__)
+#define buf_get_offset(...) 								define_alias_function_macro(buf_get_offset, __VA_ARGS__)
+#define buf_is_auto_managed(...)  					define_alias_function_macro(buf_is_auto_managed, __VA_ARGS__)
+#define buf_push_pseudo(...) 								define_alias_function_macro(buf_push_pseudo, __VA_ARGS__)
+#define buf_pop_pseudo(...) 								define_alias_function_macro(buf_pop_pseudo, __VA_ARGS__)
+#define buf_insert_pseudo(...) 							define_alias_function_macro(buf_insert_pseudo, __VA_ARGS__)
+#define buf_remove_pseudo(...) 							define_alias_function_macro(buf_remove_pseudo, __VA_ARGS__)
+#define buf_set_on_post_resize(...) 				define_alias_function_macro(buf_set_on_post_resize, __VA_ARGS__)
+#define buf_set_on_pre_resize(...) 					define_alias_function_macro(buf_set_on_pre_resize, __VA_ARGS__)
 
 
 // #ifdef USE_LEGACY
@@ -567,7 +664,7 @@ function_signature_void(uint64_t, BUFget_buffer_object_size);
 // /* Frees all the memory blocks allocated in the buffer as well as buffer object*/
 // void BUFfree();
 
-// BUFFER* BUFcreate_object(uint8_t* bytes); 
+// BUFFER* BUFcreate_object(void* bytes); 
 // /* Creates a new buffer , allocates buffer object and with initial element capacity of 'capacity' and each element would have size 'element size' in bytes*/
 // BUFFER* BUFcreate(BUFFER* __buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset);
 // /* Fills the out_value memory block with the content at index 'index'*/
@@ -664,7 +761,7 @@ function_signature_void(uint64_t, BUFget_buffer_object_size);
 // /* Returns the element size of the elements residing in the buffer, otherwise BUF_INVALID_INDEX*/
 // buf_ucount_t BUFget_element_size(); 
 // /* Returns the unsigned char pointer to the buffer*/
-// /*uint8_t* is changed to void**/
+// /*void* is changed to void**/
 // void* BUFget_ptr(); 
 
 // /* Sets the max count of elements that the buffer can contain*/
@@ -674,7 +771,7 @@ function_signature_void(uint64_t, BUFget_buffer_object_size);
 // /* Sets the element size of the elements residing in the buffer*/
 // void BUFset_element_size(buf_ucount_t element_size); 
 // /* Sets the unsigned char pointer to the buffer*/
-// void BUFset_ptr(uint8_t* ptr); 
+// void BUFset_ptr(void* ptr); 
 
 // /*Sets the buffer as a Auto Managed Buffer, 
 //  *
@@ -720,7 +817,7 @@ function_signature_void(uint64_t, BUFget_buffer_object_size);
 // /*Traverses each elements by calling func and passing element pointer and args pointer to the func*/
 // void BUFtraverse_elements(buf_ucount_t start, buf_ucount_t end, void (*func)(void* /*element ptr*/, void* /*args ptr*/), void* args);
 
-// void BUFset_offset_bytes(uint8_t* offset_bytes);
+// void BUFset_offset_bytes(void* offset_bytes);
 // void* BUFget_offset_bytes();
 
 // #endif
