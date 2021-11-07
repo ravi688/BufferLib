@@ -302,74 +302,9 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 
 */
 
+#pragma once
 
-#ifndef _BUFFER_H_
-#define _BUFFER_H_
-
-/*********************************************************************/
-/*Configuration, included in version 1.5*/
-/*included in version 1.5*/
-#define UCOUNT_TYPE uint64_t
-/*included in version 1.5*/
-#define COUNT_TYPE int64_t
-/*included in version 1.5*/
-#define BUF_NOT_INCLUDE_COMMON_UTILITIES
-/*included in version 1.5*/
-// #define BUF_DEBUG 
-
-/*********************************************************************/
-
-
-
-
-#define BUFFER_LIB_VERSION 0x0017 //1.7 (this)
-
-
-#if BUFFER_LIB_VERSION >= 0x0011
-#	define BUF_GET_VERSION_SUPPROTED
-#	define BUF_SIZE_INCREASE_MODE_SUPPORTED
-#	define BUF_CREATE_NEW_SUPPORTED
-#	define BUF_CREATE_OBJECT_NEW_SUPPORTED
-#	define BUF_LIST_SUPPORTED
-#	define BUF_GET_BINDED_SUPPORTED
-#	define BUF_INVALID_INDEX ((buf_ucount_t)(-1))
-#endif
-
-#if BUFFER_LIB_VERSION >= 0x0013
-#  define BUF_CLEAR_OVERLOADS_SUPPORTED
-#  define BUF_CONTAINS_SUPPORTED
-#  define BUF_PUSH_POP_BINDED_SUPPORTED
-#  undef BUF_INVALID_INDEX
-#  define BUF_INVALID_INDEX  (-1)
-#endif
-
-#if BUFFER_LIB_VERSION >= 0x0012
-#	define BUF_PUSH_XINTX_SUPPORTED
-#	define BUF_GET_PTR_AT_TYPEOF_SUPPORTED
-#   define BUF_GETPTR_DEPRECATED
-# 	define BUF_GET_VALUE_AT_SUPPROTED
-#	undef BUF_INVALID_INDEX
-#	define BUF_INVALID_INDEX ((buf_ucount_t)(-1))
-#endif
-
-#if BUFFER_LIB_VERSION >= 0x0014
-#	define BUF_TYPE_DEFINITION_CUSTOMIZATION_SUPPORTED
-#	define BUF_GET_BUFFER_OBJECT_SIZE_FUNCTION_SUPPORTED
-#	define BUF_GET_BOTTOM_AND_TOP_SUPPORTED
-# 	define BUF_PSEUDO_INSERT_REMOVE_PUSH_AND_POP_SUPPORTED
-#	define BUF_INSERT_SUPPORTED
-#	define BUF_CALLBACKS_SUPPORTED
-#   undef BUF_INVALID_INDEX
-#	define BUF_INVALID_INDEX ((buf_ucount_t)(-1))
-#endif
-
-#if BUFFER_LIB_VERSION < 0x0016
-#	ifndef USE_LEGACY
-#		define USE_LEGACY
-#	endif
-#endif
-
-#if  defined(GLOBAL_DEBUG) && !defined(BUF_DEBUG)
+#if defined(GLOBAL_DEBUG) && !defined(BUF_DEBUG)
 #define BUF_DEBUG 
 #endif
 
@@ -385,211 +320,78 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 #	define BUF_DEBUG
 #endif
 
-#	ifndef USE_LEGACY
-#		ifdef BUF_DEBUG
-#			ifndef CALLTRACE_DEBUG
-#				define CALLTRACE_DEBUG
-#			endif
-#			define GOOD_ASSERT(bool_value, string, ...) do { if(!(bool_value)) {  printf("[Error] %s, at %lu, %s, %s\n", string, __line__, __function__, __file__); exit(-1); } } while(false)
-#		elif defined(BUF_RELEASE)
-#			ifndef CALLTRACE_RELEASE
-#				define CALLTRACE_RELEASE
-#			endif
-#			define GOOD_ASSERT(bool_value, string, ...)
-#		endif
-#	elif defined(USE_LEGACY)
-#			ifndef CALLTRACE_RELEASE
-#				define CALLTRACE_RELEASE
-#			endif
-#			define GOOD_ASSERT BUF_ASSERT
-#	endif/*USE_LEGACY*/
-
-#include <calltrace.h>
-
-
-
-//Modified in version 1.5 (upgraded from 1.4)
 #ifdef BUF_DEBUG
-#	ifdef BUF_NOT_INCLUDE_COMMON_UTILITIES
-//#		define BUF_ASSERT(boolean, return_value, string) __BUF_ASSERT(boolean, string, return_value)
-//#		define BUF_ASSERT_NOPRINT(boolean, return_value) __BUF_ASSERT_NOPRINT(boolean, return_value)
-#		define BUF_ASSERT(boolean, string, ...) do { if(!(boolean)) { printf("[Error]: Assertion Failed, %s, at %s, line: %lu\n", string, __FUNCTION__, __LINE__); return __VA_ARGS__; } } while(false)
-#		define BUF_ASSERT_NOPRINT(boolean, ...) do { if(!(boolean)) { return __VA_ARGS__; } } while(false)
-#	else
-#		define BUF_ASSERT ASSERT
-#		define BUF_ASSERT_NOPRINT ASSERT_NOPRINT
-#	endif/*BUF_NOT_INCLUDE_COMMON_UTILITIES*/
-#else
-#	define BUF_ASSERT(boolean, string, ...) //nothing
-#	define BUF_ASSERT_NOPRINT(boolean, ...) //nothing
-#endif/*BUF_DEBUG*/
-
+#	ifndef CALLTRACE_DEBUG
+#		define CALLTRACE_DEBUG
+#	endif
+#	define GOOD_ASSERT(bool_value, string, ...) do { if(!(bool_value)) {  printf("[Error] %s, at %lu, %s, %s\n", string, __line__, __function__, __file__); exit(-1); } } while(false)
+#elif defined(BUF_RELEASE)
+#	ifndef CALLTRACE_RELEASE
+#		define CALLTRACE_RELEASE
+#	endif
+#	define GOOD_ASSERT(bool_value, string, ...)
+#endif
+#include <calltrace.h>
 #include <stdint.h>
 #include <stdbool.h>
 
-#define BUF_8BIT   /*1 byte*/
-#define BUF_16BIT  /*2 byte*/
-#define BUF_32BIT  /*4 byte*/
-#define BUF_64BIT  /*8 byte*/
-#define BUF_128BIT /*16 byte*/
 
-#if BUFFER_LIB_VERSION >= 0x0015
-#	define BUF_BUFFER_OBJECT_SIZE BUFget_buffer_object_size()
-#else
-#error "BUF_BUFFER_OBJECT_SIZE 40 define is no longer valid, You are using lower version ( < 1.5 ) of BUFFERlib, it is modified to correct value in version 1.5"
-#	define BUF_BUFFER_OBJECT_SIZE 40 /*bytes*/
-#endif/*BUFFER_LIB_VERSION*/
+/*CONFIGURATION*/
+/*********************************************************************/
+#define UCOUNT_TYPE uint64_t
+#define COUNT_TYPE int64_t 
+/*********************************************************************/
 
-#ifdef BUF_TYPE_DEFINITION_CUSTOMIZATION_SUPPORTED
-#ifndef BUF_UCOUNT_TYPE
-#	define BUF_UCOUNT_TYPE
-	#if BUFFER_LIB_VERSION >= 0x0015
-		typedef UCOUNT_TYPE buf_ucount_t;
-	#else
-		typedef uint64_t buf_ucount_t;
-	#endif/*BUFFER_LIB_VERSION*/
-#endif/*BUF_UCOUNT_TYPE*/
-#ifndef BUF_COUNT_TYPE
-#	define BUF_COUNT_TYPE
-	#if BUFFER_LIB_VERSION >= 0x0015
-		typedef COUNT_TYPE buf_count_t;
-	#else
-		typedef int64_t buf_count_t;
-	#endif/*BUFFER_LIB_VERSION*/
-#endif/*BUF_COUNT_TYPE*/
-#else
-#	define buf_ucount_t uint32_t
-# 	define buf_count_t  int32_t
-#endif/*BUF_TYPE_DEFINITION_CUSTOMIZATION_SUPPORTED*/
+typedef UCOUNT_TYPE buf_ucount_t;
+typedef COUNT_TYPE buf_count_t;
+#define BUF_INVALID_INDEX ((buf_ucount_t)(-1))
 
-#ifdef BUF_GET_BUFFER_OBJECT_SIZE_FUNCTION_SUPPORTED
-#	undef BUF_BUFFER_OBJECT_SIZE 
-#	define BUF_BUFFER_OBJECT_SIZE BUFget_buffer_object_size()
-	#ifndef USE_LEGACY
-		function_signature_void(uint64_t, BUFget_buffer_object_size);
-		#define BUFget_buffer_object_size() define_alias_function_void_macro(BUFget_buffer_object_size)
-	#else
-		uint64_t BUFget_buffer_object_size();
-	#endif/*USE_LEGACY*/
-#endif/*BUF_GET_BUFFER_OBJECT_SIZE_FUNCTION_SUPPORTED*/
-
-#ifdef BUF_GET_BOTTOM_AND_TOP_SUPPORTED
-# 	define BUFget_bottom() BUFget_ptr()
-#	define BUFget_top() BUFpeek_ptr()
-#endif/*BUF_GET_BOTTOM_AND_TOP_SUPPORTED*/
-
-#ifdef BUF_PSEUDO_INSERT_REMOVE_PUSH_AND_POP_SUPPORTED
-	function_signature(void, BUFpush_pseudo, buf_ucount_t count);
-	function_signature(void, BUFpop_pseudo, buf_ucount_t count);
-	function_signature(void, BUFinsert_pseudo, buf_ucount_t index, buf_ucount_t count);
-	function_signature(void, BUFremove_pseudo, buf_ucount_t index, buf_ucount_t count);
-
-	#define BUFpush_pseudo(...) define_alias_function_macro(BUFpush_pseudo, __VA_ARGS__)
-	#define BUFpop_pseudo(...) define_alias_function_macro(BUFpop_pseudo, __VA_ARGS__)
-	#define BUFinsert_pseudo(...) define_alias_function_macro(BUFinsert_pseudo, __VA_ARGS__)
-	#define BUFremove_pseudo(...) define_alias_function_macro(BUFremove_pseudo, __VA_ARGS__)
-
-#endif/*BUF_PSEUDO_INSERT_REMOVE_PUSH_AND_POP_SUPPORTED*/
-
-#ifdef BUF_CALLBACKS_SUPPORTED
-	function_signature(void, BUFset_on_post_resize, void (*on_post_resize)(void));
-	function_signature(void, BUFset_on_pre_resize, void (*on_pre_resize)(void));
-
-	#define BUFset_on_post_resize(...) define_alias_function_macro(BUFset_on_post_resize, __VA_ARGS__)
-	#define BUFset_on_pre_resize(...) define_alias_function_macro(BUFset_on_pre_resize, __VA_ARGS__)
-
-#endif/*BUF_CALLBACKS_SUPPORTED*/
-
-#ifdef BUF_INSERT_SUPPORTED
-#	define BUFinsert(index, value_ptr) BUFinsert_at(index, value_ptr)
-#endif/*BUF_INSERT_SUPPORTED*/
-
+#define BUF_BUFFER_OBJECT_SIZE BUFget_buffer_object_size()
+#define BUFget_bottom() BUFget_ptr()
+#define BUFget_top() BUFpeek_ptr()
+#define BUFinsert(index, value_ptr) BUFinsert_at(index, value_ptr)
 #define BUFpush_char(value) { char _char = value; BUFpush(&_char); }
 #define BUFpush_float(value) { float _float = value; BUFpush(&_float); }
 #define BUFpush_int(value) { int _int = value; BUFpush(&_int); }
 #define BUFpush_ptr(value) { void* _vd = value; BUFpush(&_vd); }
 #define BUFpush_value(value) BUFpush(&value)
-
-#ifdef BUF_CLEAR_OVERLOADS_SUPPORTED
-#	define BUFclear_int(value) BUFclear_int32(value)
-#	define BUFclear_uint(value) BUFclear_uint32(value)
-#	define BUFclear_short(value) BUFclear_int16(value)
-#	define BUFclear_ushort(value) BUFclear_uint16(value)
-#	define BUFclear_long(value) BUFclear_int64(value)
-#	define BUFclear_ulong(value) BUFclear_uint16(value)
-#	define BUFclear_int8(/*int8_t*/ value)  { int8_t _v = value; BUFclear(&_v); }
-#	define BUFclear_int16(/*int16_t*/ value) { int16_t _v = value; BUFclear(&_v); }
-#	define BUFclear_int32(/*int32_t*/ value) { int32_t v = value; BUFclear(&v); } 
-#	define BUFclear_int64(/*int64_t*/ value) { int64_t v = value; BUFclear(&v); } 
-#	define BUFclear_uint8(/*uint8_t*/ value) { uint8_t v = value; BUFclear(&v); } 
-#	define BUFclear_uint16(/*uint16_t*/ value) { uint16_t v = value; BUFclear(&v); }
-#	define BUFclear_uint32(/*uint32_t*/ value) { uint32_t v = value; BUFclear(&v); } 
-#	define BUFclear_uint64(/*uint64_t*/ value) { uint64_t v = value; BUFclear(&v); }
-#	define BUFclear_float(/*float*/ value) { float v = value; BUFclear(&v); }
-#	define BUFclear_double(/*double*/ value) { double v = value; BUFclear(&v); }
-#endif
-
-#ifdef BUF_CONTAINS_SUPPORTED
-#	define BUFcontains(void_ptr_value, comparer_t_c) (BUF_INVALID_INDEX != BUFfind_index_of(void_ptr_value, comparer_t_c))
-#endif
-
-#ifdef BUF_PUSH_POP_BINDED_SUPPORTED
-
-/*Example*/
-/*
-
-void some_function()
-{
-	//this function will the save previous BUFFER* pointer
-	BUFpush_binded();
-
-	BUFbind(some_other_buffer);
-
-	BUFpush(&some_value);
-
-	//this function will reassign the previous BUFFER* pointer
-	BUFpop_binded();
-}
-
-*/
-#if BUFFER_LIB_VERSION >= 0x0014
-#	define BUFpush_binded() BUFFER* _buf__ = BUFget_binded()
-# 	define BUFpop_binded() BUFbind(_buf__)
-#else
-	void BUFpush_binded();
-	void BUFpop_binded();
-#endif
-#endif
-
-#ifdef BUF_PUSH_XINTX_SUPPORTED
-#	define BUFpush_int8(value) { int8_t _int= value; BUFpush(&_int); }
-#	define BUFpush_int16(value) { int16_t _int= value; BUFpush(&_int); }
-#	define BUFpush_int32(value) { int32_t _int= value; BUFpush(&_int); }
-#	define BUFpush_int64(value) { int64_t _int= value; BUFpush(&_int); }
-#	define BUFpush_uint8(value) { uint8_t _int= value; BUFpush(&_int); }
-#	define BUFpush_uint16(value) { uint16_t _int= value; BUFpush(&_int); }
-#	define BUFpush_uint32(value) { uint32_t _int= value; BUFpush(&_int); }
-#	define BUFpush_uint64(value) { uint64_t _int= value; BUFpush(&_int); }
-#endif
-
-#ifdef BUF_GET_PTR_AT_TYPEOF_SUPPORTED
-#	define BUFget_ptr_at_typeof(type, index) ((type*)BUFgetptr_at(index))
-#endif
-
-#ifdef BUF_GETPTR_DEPRECATED
-# 	define BUFget_ptr_at(index) BUFgetptr_at(index)
-#endif
-
-#ifdef BUF_GET_VALUE_AT_SUPPROTED
-# 	define BUFget_value_at_typeof(type, index) (*BUFget_ptr_at_typeof(type, index))
-#endif
-
+#define BUFclear_int(value) BUFclear_int32(value)
+#define BUFclear_uint(value) BUFclear_uint32(value)
+#define BUFclear_short(value) BUFclear_int16(value)
+#define BUFclear_ushort(value) BUFclear_uint16(value)
+#define BUFclear_long(value) BUFclear_int64(value)
+#define BUFclear_ulong(value) BUFclear_uint16(value)
+#define BUFclear_int8(/*int8_t*/ value)  { int8_t _v = value; BUFclear(&_v); }
+#define BUFclear_int16(/*int16_t*/ value) { int16_t _v = value; BUFclear(&_v); }
+#define BUFclear_int32(/*int32_t*/ value) { int32_t v = value; BUFclear(&v); } 
+#define BUFclear_int64(/*int64_t*/ value) { int64_t v = value; BUFclear(&v); } 
+#define BUFclear_uint8(/*uint8_t*/ value) { uint8_t v = value; BUFclear(&v); } 
+#define BUFclear_uint16(/*uint16_t*/ value) { uint16_t v = value; BUFclear(&v); }
+#define BUFclear_uint32(/*uint32_t*/ value) { uint32_t v = value; BUFclear(&v); } 
+#define BUFclear_uint64(/*uint64_t*/ value) { uint64_t v = value; BUFclear(&v); }
+#define BUFclear_float(/*float*/ value) { float v = value; BUFclear(&v); }
+#define BUFclear_double(/*double*/ value) { double v = value; BUFclear(&v); }
+#define BUFcontains(void_ptr_value, comparer_t_c) (BUF_INVALID_INDEX != BUFfind_index_of(void_ptr_value, comparer_t_c))
+#define BUFpush_binded() BUFFER* _buf__ = BUFget_binded()
+#define BUFpop_binded() BUFbind(_buf__)
+#define BUFpush_int8(value) { int8_t _int= value; BUFpush(&_int); }
+#define BUFpush_int16(value) { int16_t _int= value; BUFpush(&_int); }
+#define BUFpush_int32(value) { int32_t _int= value; BUFpush(&_int); }
+#define BUFpush_int64(value) { int64_t _int= value; BUFpush(&_int); }
+#define BUFpush_uint8(value) { uint8_t _int= value; BUFpush(&_int); }
+#define BUFpush_uint16(value) { uint16_t _int= value; BUFpush(&_int); }
+#define BUFpush_uint32(value) { uint32_t _int= value; BUFpush(&_int); }
+#define BUFpush_uint64(value) { uint64_t _int= value; BUFpush(&_int); }
+#define BUFget_ptr_at_typeof(type, index) ((type*)BUFgetptr_at(index))
+#define BUFget_ptr_at(index) BUFgetptr_at(index)
+#define BUFget_value_at_typeof(type, index) (*BUFget_ptr_at_typeof(type, index))
 #define BUFremove_char(value, comparer) { char _char = value; BUFremove(&_char, comparer); }
 #define BUFremove_float(value, comparer) { float _float = value; BUFremove(&_float, comparer); }
 #define BUFremove_int(value, comparer) { int _int = value; BUFremove(&_int, comparer); }
 #define BUFremove_value(value, comparer) BUFremove(&value, comparer)
-
-#ifdef BUF_LIST_SUPPORTED
+#define BUFcreate_new(__buffer_ptr, element_size, capacity, offset) BUFcreate(__buffer_ptr, element_size, capacity, offset)
+#define BUFcreate_object_new(uint8_t_bytes_ptr) BUFcreate_object(uint8_t_bytes_ptr)
+#define BUFget_binded() BUFget_binded_buffer()
 
 #define LIST(type) BUFFER*
 #define LIST_NEW(type, capacity) BUFcreate_new(NULL, sizeof(type), capacity, 0)
@@ -610,52 +412,29 @@ void some_function()
 #define LIST_POP(out_value_ptr) BUFpop(out_value_ptr)
 #define LIST_GET_COUNT() BUFget_element_count()
 #define LIST_GET_DATA(type) ((type*)BUFget_ptr())
-#endif
 
-typedef struct __BUFFER BUFFER;
-
-#if BUFFER_LIB_VERSION >= 0x0017
-	typedef BUFFER* pBUFFER;
-#	ifdef __cplusplus
-#		define BUF_INVALID nullptr
-#	else
-#		define BUF_INVALID NULL
-#	endif
-#endif
-
-#ifdef __cplusplus
-extern "C" { 
-#endif
-
-#ifdef BUF_GET_VERSION_SUPPORTED
-int BUFget_version();
-#endif
-#ifdef BUF_SIZE_INCREASE_MODE_SUPPORTED
-typedef enum 
+typedef struct BUFFER 
 {
-	BUF_SIZE_INCRESE_MODE_100,
-	BUF_SIZE_INCREASE_MODE_50,
-	BUF_SIZE_INCREASE_MODE_25,
-	BUF_SIZE_INCREASE_MODE_15,
-	BUF_SIZE_INCREASE_MODE_5,
-	BUF_SIZE_INCREASE_MODE_ONE_ELEMENT,
-	BUF_SIZE_INCREASE_MODE_AUTO
-} BUF_SIZE_INCREASE_MODE; 
+	uint8_t* bytes;
+	buf_ucount_t info; 
+	buf_ucount_t capacity;
+	buf_ucount_t element_count;		
+	buf_ucount_t element_size;
+	buf_ucount_t offset; 		//added in version 1.5
+	void*/*BUFFER**/ auto_managed_empty_blocks; 
+	void (*on_post_resize)(void);
+	void (*on_pre_resize)(void);
+	void (*free)(void*);					//TODO: add a version number to this added
+	bool is_auto_managed; 
+} BUFFER;
 
-void BUFset_size_increase_mode(BUF_SIZE_INCREASE_MODE mode); 
-#endif
-
-#ifdef BUF_CREATE_NEW_SUPPORTED
-#define BUFcreate_new(__buffer_ptr, element_size, capacity, offset) BUFcreate(__buffer_ptr, element_size, capacity, offset)
-#endif
-#ifdef BUF_CREATE_OBJECT_NEW_SUPPORTED
-#define BUFcreate_object_new(uint8_t_bytes_ptr) BUFcreate_object(uint8_t_bytes_ptr)
-#endif
-#ifdef BUF_GET_BINDED_SUPPORTED
-#define BUFget_binded() BUFget_binded_buffer()
+typedef BUFFER* pBUFFER;
+#ifdef __cplusplus
+#	define BUF_INVALID nullptr
+#else
+#	define BUF_INVALID NULL
 #endif
 
-#ifndef USE_LEGACY
 function_signature(void, BUFreverseb, void* ptr_to_buffer, buf_ucount_t element_size, buf_ucount_t element_count);
 function_signature(void, BUFbind, BUFFER* buffer);
 function_signature_void(void, BUFunbind);
@@ -674,26 +453,11 @@ function_signature(void, BUFpush, void* in_value);
 function_signature(bool, BUFremove, void* object, bool (*comparer)(void*, void*));
 function_signature(bool, BUFremove_noshift, void* object, bool (*comparer)(void*, void*));
 function_signature(void, BUFclear, void* clear_value); 
-#if BUFFER_LIB_VERSION >= 0x0015
 function_signature(bool, BUFremove_at_noshift, buf_ucount_t index , void* out_value);
-#else
-function_signature(void, BUFremove_at_noshift, buf_ucount_t index , void* out_value);
-#endif
-#if BUFFER_LIB_VERSION >= 0x0015
 function_signature(bool, BUFremove_at, buf_ucount_t index , void* out_value);
-#else
-function_signature(void, BUFremove_at, buf_ucount_t index , void* out_value);
-#endif
 function_signature(void, BUFinsert_at, buf_ucount_t index , void* in_value);
 function_signature(void, BUFinsert_at_noalloc, buf_ucount_t index , void* in_value , void* out_value);
-#if BUFFER_LIB_VERSION >= 0x0014
-	function_signature(buf_ucount_t, BUFfind_index_of, void* value, bool (*comparer)(void*, void*));
-#elif BUFFER_LIB_VERSION >= 0x0013
-	function_signature(buf_count_t, BUFfind_index_of, void* value, bool (*comparer)(void*, void*)); 
-#else
-	function_signature(buf_ucount_t, BUFfind_index_of, void* value, bool (*comparer)(void*, void*)); 
-#endif
-
+function_signature(buf_ucount_t, BUFfind_index_of, void* value, bool (*comparer)(void*, void*));
 function_signature(void, BUFset_at, buf_ucount_t index , void* in_value);
 function_signature(void, BUFset_capacity, buf_ucount_t capacity);
 function_signature(void, BUFset_ptr, uint8_t* ptr); 
@@ -708,11 +472,9 @@ function_signature(BUFFER*, BUFcopy_to, BUFFER* destination);
 function_signature(BUFFER*, BUFmove_to, BUFFER* destination);
 function_signature(BUFFER*, BUFcopy_construct, BUFFER* source);
 function_signature(void, BUFset_on_free, void (*free)(void*));
-
 function_signature(void, BUFresize, buf_ucount_t new_capacity);
 function_signature(void, BUFclear_buffer, void* clear_value);
 function_signature_void(bool, BUFis_auto_managed);
-
 function_signature_void(buf_ucount_t, BUFget_capacity);
 function_signature_void(void*, BUFget_ptr); 
 function_signature_void(buf_ucount_t, BUFget_element_count);  
@@ -722,6 +484,13 @@ function_signature_void(buf_ucount_t, BUFget_element_size);
 function_signature_void(BUFFER*, BUFget_binded_buffer);
 function_signature_void(BUFFER*, BUFget_clone);
 function_signature_void(buf_ucount_t, BUFget_buffer_size);
+function_signature(void, BUFpush_pseudo, buf_ucount_t count);
+function_signature(void, BUFpop_pseudo, buf_ucount_t count);
+function_signature(void, BUFinsert_pseudo, buf_ucount_t index, buf_ucount_t count);
+function_signature(void, BUFremove_pseudo, buf_ucount_t index, buf_ucount_t count);
+function_signature(void, BUFset_on_post_resize, void (*on_post_resize)(void));
+function_signature(void, BUFset_on_pre_resize, void (*on_pre_resize)(void));
+function_signature_void(uint64_t, BUFget_buffer_object_size);
 
 #define BUFreverseb(...) 									define_alias_function_macro(BUFreverseb, __VA_ARGS__)
 #define BUFisHeapAllocated(...) 					define_alias_function_macro(BUFisHeapAllocated, __VA_ARGS__)
@@ -760,7 +529,6 @@ function_signature_void(buf_ucount_t, BUFget_buffer_size);
 #define BUFmove_to(...)    								define_alias_function_macro(BUFmove_to, __VA_ARGS__)
 #define BUFcopy_construct(...)      			define_alias_function_macro(BUFcopy_construct, __VA_ARGS__)
 #define BUFset_on_free(...)          			define_alias_function_macro(BUFset_on_free, __VA_ARGS__)
-
 #define BUFfit() 													define_alias_function_void_macro(BUFfit)
 #define BUFget_capacity() 								define_alias_function_void_macro(BUFget_capacity)
 #define BUFget_binded_buffer()				 		define_alias_function_void_macro(BUFget_binded_buffer)
@@ -774,198 +542,195 @@ function_signature_void(buf_ucount_t, BUFget_buffer_size);
 #define BUFget_clone() 										define_alias_function_void_macro(BUFget_clone)
 #define BUFget_offset() 									define_alias_function_void_macro(BUFget_offset)
 #define BUFis_auto_managed()  						define_alias_function_void_macro(BUFis_auto_managed)
-
-#endif/*USE_LEGACY*/
-
-#ifdef USE_LEGACY
-/*Begin: BUFFER*/
-void BUFreverseb(void* ptr_to_buffer , buf_ucount_t element_size, buf_ucount_t element_count); 
-
-bool BUFisHeapAllocated(BUFFER* buffer); 
-bool BUFisStackAllocated(BUFFER* buffer); 
-
-/* Binds the buffer to the binded buffer*/
-void BUFbind(BUFFER* buffer) ; 
-/* Unbinds the current binded buffer*/
-void BUFunbind();  
-/* Logs the details of buffer*/
-void BUFlog();
-/* Frees all the memory blocks allocated in the buffer as well as buffer object*/
-void BUFfree();
-
-BUFFER* BUFcreate_object(uint8_t* bytes); 
-/* Creates a new buffer , allocates buffer object and with initial element capacity of 'capacity' and each element would have size 'element size' in bytes*/
-BUFFER* BUFcreate(BUFFER* __buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset);
-/* Fills the out_value memory block with the content at index 'index'*/
-void BUFget_at(buf_ucount_t index , void* out_value);
-/* Fills the memory block referenced by index with value 'in_value' having size buffer's element size in bytes*/
-void BUFset_at(buf_ucount_t index , void* in_value) ;  
-/* Returns a void pointer to the element at index 'index'*/
-void* BUFgetptr_at(buf_ucount_t index); 
-/* When buffer becomes too large, since the buffer doubles the element capacity when it i s about to overflow, 
- * When you have done , and you have anticepted that the buffer will not increase further then you can fit the buffer and
- * there will be no free space in the buffer for new element*/
-void BUFfit();
-/* Fills out_value with the top element but doesn't remove it*/
-void BUFpeek(void* out_value);  
-/* Returns a pointer to the element which is on the top of the buffer or which is just pushed in the buffer */
-void* BUFpeek_ptr(); 
-/* Fills the out_value memeory block with the top element in the buffer with size of binded buffer's element size in bytes*/
-void BUFpop(void* out_value); 
-/* Pushes the in_value with size of bined buffer's element size in bytes on the top of the buffer 
- * When the buffer is about to overflow then it doubles it element capacity*/
-void BUFpush(void* in_value); 
-/* Returns true when successfully found the element and removed , otherwise returns false*/
-bool BUFremove(void* object, bool (*comparer)(void*, void*));
-/*Returns true when successfully found the element and removed otherwise returns false, 
- *NOTE  : It only sets the block equal to zero, it doesn't shift the elements to right as BUFremove does.
- */
-bool BUFremove_noshift(void* object, bool (*comparer)(void*, void*)); 
-/* Fills all the memory blocks having size of binded buffer 's element size in bytes with clear_value */
-void BUFclear(void* clear_value) ; 
-/* Removes an element with size binded buffer's element size, (actually it sets each byte in the memory block referenced by index to zero)
- * out_value : filled with the removed value
- * index  : the index at which it is requested to remove the element
- * NOTE : There will be no shifting of elements , that means  you can reinsert some value again in that slot without any furthur shifting of elements
- *        Use this if you now that you are removing an element at index 'index' and you would reinsert an element at that index 'index' again.
- * Important note : There will be no effect on element count in the bined buffer
- */ 
-#if BUFFER_LIB_VERSION >= 0x0015
-bool
-#else
-void
-#endif
-BUFremove_at_noshift(buf_ucount_t index , void* out_value) ;  
-/* Removes an element with size binded buffers' e lemetn size , (actually it sets each byte int the top most memory block referenced by index to zero)
- * and shifts all the elements  succeeding the block referenced by index to left by one memory block
- * index : at the element to be removed
- * out_value : Filled with the removed value
- */
-#if BUFFER_LIB_VERSION >= 0x0015
-bool
-#else
-void
-#endif
-BUFremove_at(buf_ucount_t index , void* out_value) ;  
-/* Inserts an element of size binded buffer's element size at the index 'index'
- * index : at which the value must be inserted
- * in_vaue : pointer to the value
- * NOTE : index must be less than element_count
-   And it will alloc extra memory of size element_size if the there will be no space left in the buffer
-   And it will shift all the elements beyound the index to right by one element
- */
-void BUFinsert_at(buf_ucount_t index , void* in_value) ;  
-/* Inserts an element of size binded buffer's element size at the index 'index'
- * index : at which the value must be inserted
- * in_value : pointer to the value
- * out_value : filled with the existing element at index 'index'
- * NOTE : index must be less than element_count //before version 1.4 it was element_size, but it is not replaced with element_count in version 1.5
-   And actually it simply replaces the value at index with the value in_value
- */
-void BUFinsert_at_noalloc(buf_ucount_t index , void* in_value , void* out_value) ; 
-
-/* value : the pointer to the value , of which we want to retrieve the index
- * comparer : pointer to the function that can comparer that type of elements
- * for example : 
- * if you want to compare two integers then the comparer function would be like this : 
- *  bool comparere(void* int1, void* int2)
- *  {  
- *     return (int*)int1 == (int*)int2;
- *  }
- * 
- * This function returns BUF_INVALID_INDEX if the value is not found otherwise returns a valid non-negative  value.
- */
-#if BUFFER_LIB_VERSION >= 0x0014
-	//returns valid index if index is found otherwise BUF_INVALID_INDEX
-	buf_ucount_t BUFfind_index_of(void* value, bool (*comparer)(void*, void*));
-#elif BUFFER_LIB_VERSION >= 0x0013
-	buf_count_t BUFfind_index_of(void* value, bool (*comparer)(void*, void*)); 
-#else
-	buf_ucount_t BUFfind_index_of(void* value, bool (*comparer)(void*, void*)); 
-#endif
-/* Returns the max count of elements that the buffer can contains, otherwise BUF_INVALID_INDEX*/
-buf_ucount_t BUFget_capacity();  
-/* Returns the Current element count in the buffer, otherwise BUF_INVALID_INDEX*/
-buf_ucount_t BUFget_element_count(); 
-/* Returns the element size of the elements residing in the buffer, otherwise BUF_INVALID_INDEX*/
-buf_ucount_t BUFget_element_size(); 
-/* Returns the unsigned char pointer to the buffer*/
-/*uint8_t* is changed to void**/
-void* BUFget_ptr(); 
-
-/* Sets the max count of elements that the buffer can contain*/
-void BUFset_capacity(buf_ucount_t capacity);  
-/* Sets the Current element count in the buffer*/
-void BUFset_element_count(buf_ucount_t element_count); 
-/* Sets the element size of the elements residing in the buffer*/
-void BUFset_element_size(buf_ucount_t element_size); 
-/* Sets the unsigned char pointer to the buffer*/
-void BUFset_ptr(uint8_t* ptr); 
-
-/*Sets the buffer as a Auto Managed Buffer, 
- *
- * Meaning is that, When you remove an element by calling BUFremove_at_noshift() or BUFremove_noshift(),
- * then the removed block will get registered automatically to the second buffer of pointers
- * and when you call BUFpush(), then this function first look up whether the buffer is auto managed or not, if it is auto managed then 
- * this function will check for whether the buffer of pointers has some elements or not and finally if it has then this function
- * will pop the pointer to the memory block and the writes to it.
- *
- */
-void BUFset_auto_managed(bool value); 
-
-/* Added in version 1.5
- *Returns whether the binded buffer is auto managed or not
- */
-bool BUFis_auto_managed();
-
-BUFFER* BUFget_binded_buffer();
-
-/* Added in version 1.5
- * Clones the current binded buffer and returns
- * 
- */
-BUFFER* BUFget_clone();
-
-/*Returns the offset*/
-buf_ucount_t BUFget_offset();
-/*Sets the offset*/
-void BUFset_offset(buf_ucount_t offset);
-
-/*Resizes the buffer to new_capacity; 
- *NOTE: Here new_capacity means the new number of elements capacity of size element_size
- */
-void BUFresize(buf_ucount_t new_capacity);
-
-/*Returns the buffer size in bytes including the offset*/ 
-buf_ucount_t BUFget_buffer_size();
-
-/*Clears the entire buffer with value *clear_value, or if it is NULL then with zero*/
-void BUFclear_buffer(void* clear_value);
-
-#if BUFFER_LIB_VERSION >= 0x0015
-/*Traverses each elements by calling func and passing element pointer and args pointer to the func*/
-void BUFtraverse_elements(buf_ucount_t start, buf_ucount_t end, void (*func)(void* /*element ptr*/, void* /*args ptr*/), void* args);
-
-void BUFset_offset_bytes(uint8_t* offset_bytes);
-void* BUFget_offset_bytes();
-
-#endif
-
-#if BUFFER_LIB_VERSION >= 0x0016
-
-void BUFcopy_to(BUFFER* destination);
-void BUFmove_to(BUFFER* destination);
-BUFFER* BUFcopy_construct(BUFFER* source);
-void BUFset_on_free(void (*free)(void*));
-
-#endif
-#endif
+#define BUFpush_pseudo(...) 							define_alias_function_macro(BUFpush_pseudo, __VA_ARGS__)
+#define BUFpop_pseudo(...) 								define_alias_function_macro(BUFpop_pseudo, __VA_ARGS__)
+#define BUFinsert_pseudo(...) 						define_alias_function_macro(BUFinsert_pseudo, __VA_ARGS__)
+#define BUFremove_pseudo(...) 						define_alias_function_macro(BUFremove_pseudo, __VA_ARGS__)
+#define BUFset_on_post_resize(...) 				define_alias_function_macro(BUFset_on_post_resize, __VA_ARGS__)
+#define BUFset_on_pre_resize(...) 				define_alias_function_macro(BUFset_on_pre_resize, __VA_ARGS__)
+#define BUFget_buffer_object_size() 			define_alias_function_void_macro(BUFget_buffer_object_size)
 
 
-/*End: BUFFER*/
+// #ifdef USE_LEGACY
+// /*Begin: BUFFER*/
+// void BUFreverseb(void* ptr_to_buffer , buf_ucount_t element_size, buf_ucount_t element_count); 
 
-#ifdef __cplusplus
-}
-#endif
+// bool BUFisHeapAllocated(BUFFER* buffer); 
+// bool BUFisStackAllocated(BUFFER* buffer); 
 
-#endif /*_BUFFER_H_*/
+// /* Binds the buffer to the binded buffer*/
+// void BUFbind(BUFFER* buffer) ; 
+// /* Unbinds the current binded buffer*/
+// void BUFunbind();  
+// /* Logs the details of buffer*/
+// void BUFlog();
+// /* Frees all the memory blocks allocated in the buffer as well as buffer object*/
+// void BUFfree();
+
+// BUFFER* BUFcreate_object(uint8_t* bytes); 
+// /* Creates a new buffer , allocates buffer object and with initial element capacity of 'capacity' and each element would have size 'element size' in bytes*/
+// BUFFER* BUFcreate(BUFFER* __buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset);
+// /* Fills the out_value memory block with the content at index 'index'*/
+// void BUFget_at(buf_ucount_t index , void* out_value);
+// /* Fills the memory block referenced by index with value 'in_value' having size buffer's element size in bytes*/
+// void BUFset_at(buf_ucount_t index , void* in_value) ;  
+// /* Returns a void pointer to the element at index 'index'*/
+// void* BUFgetptr_at(buf_ucount_t index); 
+// /* When buffer becomes too large, since the buffer doubles the element capacity when it i s about to overflow, 
+//  * When you have done , and you have anticepted that the buffer will not increase further then you can fit the buffer and
+//  * there will be no free space in the buffer for new element*/
+// void BUFfit();
+// /* Fills out_value with the top element but doesn't remove it*/
+// void BUFpeek(void* out_value);  
+// /* Returns a pointer to the element which is on the top of the buffer or which is just pushed in the buffer */
+// void* BUFpeek_ptr(); 
+// /* Fills the out_value memeory block with the top element in the buffer with size of binded buffer's element size in bytes*/
+// void BUFpop(void* out_value); 
+// /* Pushes the in_value with size of bined buffer's element size in bytes on the top of the buffer 
+//  * When the buffer is about to overflow then it doubles it element capacity*/
+// void BUFpush(void* in_value); 
+// /* Returns true when successfully found the element and removed , otherwise returns false*/
+// bool BUFremove(void* object, bool (*comparer)(void*, void*));
+// /*Returns true when successfully found the element and removed otherwise returns false, 
+//  *NOTE  : It only sets the block equal to zero, it doesn't shift the elements to right as BUFremove does.
+//  */
+// bool BUFremove_noshift(void* object, bool (*comparer)(void*, void*)); 
+// /* Fills all the memory blocks having size of binded buffer 's element size in bytes with clear_value */
+// void BUFclear(void* clear_value) ; 
+// /* Removes an element with size binded buffer's element size, (actually it sets each byte in the memory block referenced by index to zero)
+//  * out_value : filled with the removed value
+//  * index  : the index at which it is requested to remove the element
+//  * NOTE : There will be no shifting of elements , that means  you can reinsert some value again in that slot without any furthur shifting of elements
+//  *        Use this if you now that you are removing an element at index 'index' and you would reinsert an element at that index 'index' again.
+//  * Important note : There will be no effect on element count in the bined buffer
+//  */ 
+// #if BUFFER_LIB_VERSION >= 0x0015
+// bool
+// #else
+// void
+// #endif
+// BUFremove_at_noshift(buf_ucount_t index , void* out_value) ;  
+// /* Removes an element with size binded buffers' e lemetn size , (actually it sets each byte int the top most memory block referenced by index to zero)
+//  * and shifts all the elements  succeeding the block referenced by index to left by one memory block
+//  * index : at the element to be removed
+//  * out_value : Filled with the removed value
+//  */
+// #if BUFFER_LIB_VERSION >= 0x0015
+// bool
+// #else
+// void
+// #endif
+// BUFremove_at(buf_ucount_t index , void* out_value) ;  
+// /* Inserts an element of size binded buffer's element size at the index 'index'
+//  * index : at which the value must be inserted
+//  * in_vaue : pointer to the value
+//  * NOTE : index must be less than element_count
+//    And it will alloc extra memory of size element_size if the there will be no space left in the buffer
+//    And it will shift all the elements beyound the index to right by one element
+//  */
+// void BUFinsert_at(buf_ucount_t index , void* in_value) ;  
+// /* Inserts an element of size binded buffer's element size at the index 'index'
+//  * index : at which the value must be inserted
+//  * in_value : pointer to the value
+//  * out_value : filled with the existing element at index 'index'
+//  * NOTE : index must be less than element_count //before version 1.4 it was element_size, but it is not replaced with element_count in version 1.5
+//    And actually it simply replaces the value at index with the value in_value
+//  */
+// void BUFinsert_at_noalloc(buf_ucount_t index , void* in_value , void* out_value) ; 
+
+// /* value : the pointer to the value , of which we want to retrieve the index
+//  * comparer : pointer to the function that can comparer that type of elements
+//  * for example : 
+//  * if you want to compare two integers then the comparer function would be like this : 
+//  *  bool comparere(void* int1, void* int2)
+//  *  {  
+//  *     return (int*)int1 == (int*)int2;
+//  *  }
+//  * 
+//  * This function returns BUF_INVALID_INDEX if the value is not found otherwise returns a valid non-negative  value.
+//  */
+// #if BUFFER_LIB_VERSION >= 0x0014
+// 	//returns valid index if index is found otherwise BUF_INVALID_INDEX
+// 	buf_ucount_t BUFfind_index_of(void* value, bool (*comparer)(void*, void*));
+// #elif BUFFER_LIB_VERSION >= 0x0013
+// 	buf_count_t BUFfind_index_of(void* value, bool (*comparer)(void*, void*)); 
+// #else
+// 	buf_ucount_t BUFfind_index_of(void* value, bool (*comparer)(void*, void*)); 
+// #endif
+// /* Returns the max count of elements that the buffer can contains, otherwise BUF_INVALID_INDEX*/
+// buf_ucount_t BUFget_capacity();  
+// /* Returns the Current element count in the buffer, otherwise BUF_INVALID_INDEX*/
+// buf_ucount_t BUFget_element_count(); 
+// /* Returns the element size of the elements residing in the buffer, otherwise BUF_INVALID_INDEX*/
+// buf_ucount_t BUFget_element_size(); 
+// /* Returns the unsigned char pointer to the buffer*/
+// /*uint8_t* is changed to void**/
+// void* BUFget_ptr(); 
+
+// /* Sets the max count of elements that the buffer can contain*/
+// void BUFset_capacity(buf_ucount_t capacity);  
+// /* Sets the Current element count in the buffer*/
+// void BUFset_element_count(buf_ucount_t element_count); 
+// /* Sets the element size of the elements residing in the buffer*/
+// void BUFset_element_size(buf_ucount_t element_size); 
+// /* Sets the unsigned char pointer to the buffer*/
+// void BUFset_ptr(uint8_t* ptr); 
+
+// /*Sets the buffer as a Auto Managed Buffer, 
+//  *
+//  * Meaning is that, When you remove an element by calling BUFremove_at_noshift() or BUFremove_noshift(),
+//  * then the removed block will get registered automatically to the second buffer of pointers
+//  * and when you call BUFpush(), then this function first look up whether the buffer is auto managed or not, if it is auto managed then 
+//  * this function will check for whether the buffer of pointers has some elements or not and finally if it has then this function
+//  * will pop the pointer to the memory block and the writes to it.
+//  *
+//  */
+// void BUFset_auto_managed(bool value); 
+
+// /* Added in version 1.5
+//  *Returns whether the binded buffer is auto managed or not
+//  */
+// bool BUFis_auto_managed();
+
+// BUFFER* BUFget_binded_buffer();
+
+// /* Added in version 1.5
+//  * Clones the current binded buffer and returns
+//  * 
+//  */
+// BUFFER* BUFget_clone();
+
+// /*Returns the offset*/
+// buf_ucount_t BUFget_offset();
+// /*Sets the offset*/
+// void BUFset_offset(buf_ucount_t offset);
+
+// /*Resizes the buffer to new_capacity; 
+//  *NOTE: Here new_capacity means the new number of elements capacity of size element_size
+//  */
+// void BUFresize(buf_ucount_t new_capacity);
+
+// /*Returns the buffer size in bytes including the offset*/ 
+// buf_ucount_t BUFget_buffer_size();
+
+// /*Clears the entire buffer with value *clear_value, or if it is NULL then with zero*/
+// void BUFclear_buffer(void* clear_value);
+
+// #if BUFFER_LIB_VERSION >= 0x0015
+// /*Traverses each elements by calling func and passing element pointer and args pointer to the func*/
+// void BUFtraverse_elements(buf_ucount_t start, buf_ucount_t end, void (*func)(void* /*element ptr*/, void* /*args ptr*/), void* args);
+
+// void BUFset_offset_bytes(uint8_t* offset_bytes);
+// void* BUFget_offset_bytes();
+
+// #endif
+
+// #if BUFFER_LIB_VERSION >= 0x0016
+
+// void BUFcopy_to(BUFFER* destination);
+// void BUFmove_to(BUFFER* destination);
+// BUFFER* BUFcopy_construct(BUFFER* source);
+// void BUFset_on_free(void (*free)(void*));
+
+// #endif
+// #endif
