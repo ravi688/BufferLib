@@ -14,11 +14,12 @@ void print_ptr(void* ptr)
 	printf("%d ", *(int*)ptr); 
 }
 
-BUFFER* read_file(const char* file_name)
+#define read_file(...) define_alias_function_macro(read_file, __VA_ARGS__)
+function_signature(BUFFER*, read_file, const char* file_name)
 {
     BUFpush_binded();
     FILE* file = fopen(file_name, "r");
-    BUF_ASSERT(file != NULL, "file opening failed!", NULL);
+    GOOD_ASSERT(file != NULL, "file opening failed!");
     fseek(file, 0, SEEK_END);
     uint64_t size = ftell(file); 
     fseek(file, 0, SEEK_SET);
