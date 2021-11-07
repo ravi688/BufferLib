@@ -1,4 +1,4 @@
-#include "buffer.h"				//This must be included at the top for preprocessing reasons
+#include <buffer.h>				//This must be included at the top for preprocessing reasons
 
 
 #include <stdlib.h>
@@ -7,58 +7,26 @@
 #include <string.h>
 #include <stdbool.h>
 
-#ifndef BUF_NOT_INCLUDE_COMMON_UTILITIES
-#include "CommonUtilities.h"
-#endif/*BUF_NOT_INCLUDE_COMMON_UTILITIES*/
-
-
-#if BUFFER_LIB_VERSION < 0x0016
-#error "Buffer.c requries BUFFER_LIB_VERSION greater than or equal to 0x0016"
-#endif
-
-//Version 1.6
-
 #define STACK_ALLOCATED_OBJECT  0x1
 #define HEAP_ALLOCATED_OBJECT 	 0x2
 
-struct __BUFFER 
-{
-	uint8_t* bytes;
-	buf_ucount_t info; 
-	buf_ucount_t capacity;
-	buf_ucount_t element_count;		
-	buf_ucount_t element_size;
-	buf_ucount_t offset; 		//added in version 1.5
-	struct __BUFFER* auto_managed_empty_blocks; 
-#ifdef BUF_CALLBACKS_SUPPORTED
-	void (*on_post_resize)(void);
-	void (*on_pre_resize)(void);
-#endif/*BUF_CALLBACKS_SUPPORTED*/
-	void (*free)(void*);					//TODO: add a version number to this added
-	bool is_auto_managed; 
-};
-struct __BUFFER* binded_buffer;
-struct __BUFFER* temp_binded_buffer;;
+static BUFFER* binded_buffer;
+static BUFFER* temp_binded_buffer;;
 
-#ifdef BUF_GET_BUFFER_OBJECT_SIZE_FUNCTION_SUPPORTED
-function_signature_void(uint64_t, BUFget_buffer_object_size)
-{ 
-	return sizeof(struct __BUFFER); 
-}
-#endif/*BUF_GET_BUFFER_OBJECT_SIZE_FUNCTION_SUPPORTED*/
-#ifdef BUF_CALLBACKS_SUPPORTED
+function_signature_void(uint64_t, BUFget_buffer_object_size) { return sizeof(BUFFER); } 
+
 function_signature(void, BUFset_on_post_resize, void (*on_post_resize)(void))
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
 	binded_buffer->on_post_resize = on_post_resize;
 }
+
 function_signature(void, BUFset_on_pre_resize, void (*on_pre_resize)(void))
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
 	binded_buffer->on_pre_resize = on_pre_resize;
 }
-#endif/*BUF_CALLBACKS_SUPPORTED*/
-#ifdef BUF_PSEUDO_INSERT_REMOVE_PUSH_AND_POP_SUPPORTED
+
 function_signature(void, BUFpush_pseudo, buf_ucount_t count)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
@@ -72,7 +40,6 @@ function_signature(void, BUFpush_pseudo, buf_ucount_t count)
 		binded_buffer->capacity *= 2;
 	if(previous_capacity != binded_buffer->capacity)
 	{
-		#ifdef BUF_CALLBACKS_SUPPORTED
 		if(binded_buffer->on_pre_resize != NULL)
 		{
 			buf_ucount_t temp = previous_capacity; 
@@ -83,21 +50,20 @@ function_signature(void, BUFpush_pseudo, buf_ucount_t count)
 		 	previous_capacity = binded_buffer->capacity; 
 			binded_buffer->capacity = temp;
 		}
-		#endif
 		binded_buffer->bytes = realloc(binded_buffer->bytes , binded_buffer->capacity * binded_buffer->element_size); 
 		GOOD_ASSERT(binded_buffer->bytes != NULL, "Memory Allocation Failure Exception");
-		#ifdef BUF_CALLBACKS_SUPPORTED
 		if(binded_buffer->on_post_resize != NULL) (binded_buffer->on_post_resize)();
-		#endif
 	}
 	memset(binded_buffer->bytes + previous_element_count * binded_buffer->element_size , 0 , binded_buffer->element_size * count); 
 }
+
 function_signature(void, BUFpop_pseudo, buf_ucount_t count)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
 	GOOD_ASSERT(count <= binded_buffer->element_count, "Buffer Underflow Exception");
 	binded_buffer->element_count -= count;	
 }
+
 function_signature(void, BUFinsert_pseudo, buf_ucount_t index, buf_ucount_t count)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
@@ -106,15 +72,11 @@ function_signature(void, BUFinsert_pseudo, buf_ucount_t index, buf_ucount_t coun
 	binded_buffer->element_count += count; 
 	if(binded_buffer->element_count > binded_buffer->capacity)
 	{	
-		#ifdef BUF_CALLBACKS_SUPPORTED
 		if(binded_buffer->on_pre_resize != NULL) (binded_buffer->on_pre_resize)();
-		#endif
 		binded_buffer->bytes = realloc(binded_buffer->bytes , binded_buffer->element_size * binded_buffer->element_count);
 		GOOD_ASSERT(binded_buffer->bytes != NULL, "Memory Allocation Failure Exception");
 		binded_buffer->capacity = binded_buffer->element_count;
-		#ifdef BUF_CALLBACKS_SUPPORTED
 		if(binded_buffer->on_post_resize != NULL) (binded_buffer->on_post_resize)();
-		#endif
 	}
 	uint8_t* dst_ptr = binded_buffer->bytes + (binded_buffer->element_count - 1) * binded_buffer->element_size;
 	uint8_t offset = binded_buffer->element_size * count;
@@ -126,6 +88,7 @@ function_signature(void, BUFinsert_pseudo, buf_ucount_t index, buf_ucount_t coun
 	}
 	memset(binded_buffer->bytes + index * binded_buffer->element_size, 0, count * binded_buffer->element_size);
 }
+
 function_signature(void, BUFremove_pseudo, buf_ucount_t index, buf_ucount_t count)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
@@ -142,7 +105,7 @@ function_signature(void, BUFremove_pseudo, buf_ucount_t index, buf_ucount_t coun
 	}
 	memset(binded_buffer->bytes + binded_buffer->element_count * binded_buffer->element_size , 0 , binded_buffer->element_size * count);
 }
-#endif/*BUF_PSEUDO_INSERT_REMOVE_PUSH_AND_POP_SUPPORTED*/
+
 function_signature(void, BUFset_auto_managed, bool value)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception"); 
@@ -157,85 +120,88 @@ function_signature(void, BUFset_auto_managed, bool value)
 			}
  	binded_buffer->is_auto_managed = value; 
 }
-#if BUFFER_LIB_VERSION < 0x0014
-void BUFpush_binded()
-{
-	temp_binded_buffer = binded_buffer;
-	return;
-}
-void BUFpop_binded()
-{
-	binded_buffer = temp_binded_buffer;
-	return;
-}
-#endif
+
 function_signature_void(buf_ucount_t, BUFget_offset)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", BUF_INVALID_INDEX); 
 	return binded_buffer->offset;
 }
+
 function_signature_void(buf_ucount_t, BUFget_capacity)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", BUF_INVALID_INDEX);
  	return binded_buffer->capacity;
- }
+}
+
 function_signature_void(buf_ucount_t, BUFget_element_count) 
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", BUF_INVALID_INDEX);
  	return binded_buffer->element_count;
 } 
+
 function_signature_void(buf_ucount_t, BUFget_element_size)
 { 
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", BUF_INVALID_INDEX);
 	return binded_buffer->element_size;  
 } 
+
 function_signature_void(void*, BUFget_ptr)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", NULL); 
 	return binded_buffer->bytes; 
 } 
+
 function_signature(void, BUFset_offset, buf_ucount_t offset)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
 	binded_buffer->offset = offset;
 }
+
 function_signature(void, BUFset_capacity, buf_ucount_t capacity)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
  	binded_buffer->capacity = capacity;
 }
+
 function_signature(void, BUFset_element_count, buf_ucount_t element_count)
 { 
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
 	binded_buffer->element_count = element_count; 
 }
+
 function_signature(void, BUFset_element_size,  buf_ucount_t element_size)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
 	binded_buffer->element_size = element_size; 
 } 
+
 function_signature(void, BUFset_ptr, uint8_t* ptr)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
 	binded_buffer->bytes = ptr; 
 }
+
 function_signature_void(BUFFER*, BUFget_binded_buffer)
 { 
 	return binded_buffer;
 } 
+
 function_signature_void(bool, BUFis_auto_managed)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", false);
 	return binded_buffer->is_auto_managed; 
 }
+
 function_signature(void, BUFbind, BUFFER* buffer)
 {
   binded_buffer = buffer; 
 } 
+
 function_signature_void(void, BUFunbind)
 { 
 	binded_buffer = NULL; 
 } 
+
 function_signature_void(void, BUFlog)
 {
 	printf(
@@ -251,8 +217,7 @@ function_signature_void(void, BUFlog)
 		    binded_buffer->offset
 			);
 }
-#if BUFFER_LIB_VERSION >= 0x0015
-//Added in version 1.5
+
 function_signature(void, BUFtraverse_elements, buf_ucount_t start, buf_ucount_t end, void (*func)(void* /*element ptr*/, void* /*args ptr*/), void* args)
 {
 	 GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception"); 
@@ -260,15 +225,17 @@ function_signature(void, BUFtraverse_elements, buf_ucount_t start, buf_ucount_t 
 	 for(buf_ucount_t i = start; i <= end; i++)
 	 			func(BUFget_ptr_at(i), args);
 }
-#endif/*BUFFER_LIB_VERSION >= 0x0015*/
+
 function_signature(bool, BUFisStackAllocated, BUFFER* buffer)
 {
-	return ((((struct __BUFFER*)buffer)->info) & STACK_ALLOCATED_OBJECT) == STACK_ALLOCATED_OBJECT; 
+	return (((buffer)->info) & STACK_ALLOCATED_OBJECT) == STACK_ALLOCATED_OBJECT; 
 }
+
 function_signature(bool, BUFisHeapAllocated, BUFFER* buffer)
 {
-	return ((((struct __BUFFER*)buffer)->info) & HEAP_ALLOCATED_OBJECT) == HEAP_ALLOCATED_OBJECT; 
+	return (((buffer)->info) & HEAP_ALLOCATED_OBJECT) == HEAP_ALLOCATED_OBJECT; 
 }
+
 function_signature_void(void, BUFfree)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
@@ -284,8 +251,7 @@ function_signature_void(void, BUFfree)
   { binded_buffer->info = 0x00; free(binded_buffer) ; } 
 	binded_buffer = NULL;
 }
-#if BUFFER_LIB_VERSION >= 0x0016
-//Added in version 1.5
+
 function_signature_void(BUFFER*, BUFget_clone)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", NULL); 
@@ -296,9 +262,7 @@ function_signature_void(BUFFER*, BUFget_clone)
 	cloned_buffer->on_post_resize = binded_buffer->on_post_resize;
 	return cloned_buffer;
 }
-#endif/*BUFFER_LIB_VERSION >= 0x0015*/
 
-#if BUFFER_LIB_VERSION >= 0x0016
 function_signature(BUFFER*, BUFmove_to, BUFFER* destination)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", NULL); 
@@ -310,6 +274,7 @@ function_signature(BUFFER*, BUFmove_to, BUFFER* destination)
 	BUFfree(); 
 	BUFpop_binded();
 }
+
 function_signature(BUFFER*, BUFcopy_to, BUFFER* destination)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", NULL); 
@@ -326,6 +291,7 @@ function_signature(BUFFER*, BUFcopy_to, BUFFER* destination)
 	destination->element_count = binded_buffer->element_count; 
 	BUFpop_binded();
 }
+
 function_signature(BUFFER*, BUFcopy_construct, BUFFER* source_buffer)
 {
 	GOOD_ASSERT(source_buffer != NULL, "Source Buffer Is NULL Exception", NULL); 
@@ -351,12 +317,10 @@ function_signature(void, BUFset_on_free, void (*free)(void*))
 	binded_buffer->free = free;
 }
 
-#endif/*BUFFER_LIB_VERSION >= 0x0015*/
-//TODO
-//Replace the name with BUFcreate_object_from_bytes
+//TODO: Replace the name with BUFcreate_object_from_bytes
 function_signature(BUFFER*, BUFcreate_object, uint8_t* bytes)
 {
-	struct __BUFFER* buffer = (struct __BUFFER*)(bytes);
+	BUFFER* buffer = (BUFFER*)(bytes);
 	buffer->bytes = NULL;
 	buffer->info = 0x00;
 	buffer->info |= STACK_ALLOCATED_OBJECT; 
@@ -367,19 +331,20 @@ function_signature(BUFFER*, BUFcreate_object, uint8_t* bytes)
 	buffer->is_auto_managed = false; 
 	buffer->on_pre_resize = NULL; 
 	buffer->on_post_resize = NULL;
-	buffer->offset = 0;	//added in version 1.5
+	buffer->offset = 0;
 	buffer->free = NULL;
 	return buffer;
 }
+
 function_signature(BUFFER*, BUFcreate, BUFFER* __buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset)
 {
 	GOOD_ASSERT((int64_t)(element_size) != -1, "element_size cannot be negative", NULL); 
 	GOOD_ASSERT((int64_t)(capacity) != -1, "capacity cannot be negative", NULL);
 	GOOD_ASSERT((int64_t)(offset) != -1, "offset cannot be negative", NULL);
-	struct __BUFFER* buffer = (struct __BUFFER*)__buffer;
+	BUFFER* buffer = (BUFFER*)__buffer;
 	if(buffer == NULL)
 	{ 
-		buffer = malloc(sizeof(struct __BUFFER));
+		buffer = malloc(sizeof(BUFFER));
 		GOOD_ASSERT(buffer != NULL, "Memory Allocation Failure Exception", NULL);
 		buffer->info = 0x00; 
 		buffer->info |= HEAP_ALLOCATED_OBJECT;
@@ -394,34 +359,38 @@ function_signature(BUFFER*, BUFcreate, BUFFER* __buffer, buf_ucount_t element_si
 	buffer->element_size = element_size; 
 	buffer->capacity = capacity;
 	buffer->element_count = 0;
-	buffer->offset = offset; //added in version 1.5
+	buffer->offset = offset;
 	return buffer; 
 }
+
 function_signature(void, BUFget_at, buf_ucount_t index, void* out_value)
 {	
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
 	GOOD_ASSERT(index < binded_buffer->element_count,"Index Out of Range Exception");
 	memcpy(out_value , binded_buffer->bytes + index * binded_buffer->element_size, binded_buffer->element_size); 
 }
+
 function_signature(void*, BUFgetptr_at, buf_ucount_t index)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", NULL);
 	GOOD_ASSERT(index < binded_buffer->element_count,"Index Out of Range Exception", NULL);
 	return binded_buffer->bytes + index * binded_buffer->element_size; 
 }
+
 function_signature(void, BUFset_at, buf_ucount_t index , void* in_value)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
 	GOOD_ASSERT(index < binded_buffer->element_count,"Index Out of Range Exception");
 	memcpy(binded_buffer->bytes + index * binded_buffer->element_size, in_value , binded_buffer->element_size) ; 
 }
-#if BUFFER_LIB_VERSION >= 0x0015
+
 function_signature_void(void*, BUFget_offset_bytes)
 {
 	if(binded_buffer->offset == 0)
 		return NULL; 
 	return binded_buffer->bytes + binded_buffer->capacity * binded_buffer->element_size;
 }
+
 function_signature(void, BUFset_offset_bytes, uint8_t* offset_bytes)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
@@ -430,18 +399,13 @@ function_signature(void, BUFset_offset_bytes, uint8_t* offset_bytes)
 		return;
 	memcpy(binded_buffer->bytes + binded_buffer->capacity * binded_buffer->element_size, offset_bytes, binded_buffer->offset);
 }
-#endif
 
-#if BUFFER_LIB_VERSION >= 0x0015
-//Added in version 1.5
 function_signature_void(buf_ucount_t, BUFget_buffer_size)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", BUF_INVALID_INDEX);
 	return binded_buffer->capacity * binded_buffer->element_size  + binded_buffer->offset;
 }
-#endif /*BUFFER_LIB_VERSION >= 0x0015*/
-#if BUFFER_LIB_VERSION >= 0x0015
-//Added in version 1.5
+
 function_signature(void, BUFresize, buf_ucount_t new_capacity)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
@@ -476,11 +440,7 @@ function_signature(void, BUFresize, buf_ucount_t new_capacity)
 		binded_buffer->element_count = new_capacity;
 	binded_buffer->capacity = new_capacity;
 }
-#endif /*BUFFER_LIB_VERSION >= 0x0015*/
 
-#if BUFFER_LIB_VERSION >= 0x0015
-//Added in version 1.5
-//Clears entire buffer
 function_signature(void, BUFclear_buffer, void* clear_value)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
@@ -498,8 +458,7 @@ function_signature(void, BUFclear_buffer, void* clear_value)
 	}
 	binded_buffer->element_count = 0;
 }
-#endif/*BUFFER_LIB_VERSION >= 0x0015*/
-//Clears only elements
+
 function_signature(void, BUFclear, void* clear_value)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
@@ -516,6 +475,7 @@ function_signature(void, BUFclear, void* clear_value)
 	} 
  	binded_buffer->element_count = 0;
 }
+
 function_signature(void, BUFinsert_at_noalloc, buf_ucount_t index , void* in_value , void* out_value)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
@@ -524,6 +484,7 @@ function_signature(void, BUFinsert_at_noalloc, buf_ucount_t index , void* in_val
 		memcpy(out_value , binded_buffer->bytes + index * binded_buffer->element_size , binded_buffer->element_size) ; 
 	memcpy(binded_buffer->bytes + index * binded_buffer->element_size, in_value , binded_buffer->element_size) ;  
 }
+
 function_signature(void, BUFinsert_at, buf_ucount_t index , void* in_value)
 {	
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
@@ -532,15 +493,11 @@ function_signature(void, BUFinsert_at, buf_ucount_t index , void* in_value)
 	++(binded_buffer->element_count); 
 	if((binded_buffer->element_count) > binded_buffer->capacity)
 	{
-		#ifdef BUF_CALLBACKS_SUPPORTED
 		if(binded_buffer->on_pre_resize != NULL)(binded_buffer->on_pre_resize)();
-		#endif
 		binded_buffer->bytes = realloc(binded_buffer->bytes , binded_buffer->element_size * binded_buffer->element_count) ; 
 		GOOD_ASSERT(binded_buffer->bytes != NULL, "Memory Allocation Failure Exception");
 		binded_buffer->capacity = binded_buffer->element_count;
-		#ifdef BUF_CALLBACKS_SUPPORTED
 		if(binded_buffer->on_post_resize != NULL) (binded_buffer->on_post_resize)();
-		#endif
 	}
 
 	uint8_t* dst_ptr = binded_buffer->bytes + (binded_buffer->element_count - 1) * binded_buffer->element_size;
@@ -552,20 +509,13 @@ function_signature(void, BUFinsert_at, buf_ucount_t index , void* in_value)
 	}
 	memcpy(dst_ptr , in_value , binded_buffer->element_size); 
 }
+
 static bool ptr_comparer(void* ptr1, void* ptr2) { return *((uint8_t*)ptr1) == *((uint8_t*)ptr2); }
-#if BUFFER_LIB_VERSION >= 0x0015
+
 function_signature(bool, BUFremove_at_noshift, buf_ucount_t index , void* out_value)
-#else
-function_signature(void, BUFremove_at_noshift, buf_ucount_t index , void* out_value)
-#endif
 {
-	#if BUFFER_LIB_VERSION >= 0x0015
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", false);
 	GOOD_ASSERT(index < binded_buffer->element_count,"Index Out of Range Exception", false);
-	#else
-	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
-	GOOD_ASSERT(index < binded_buffer->element_count,"Index Out of Range Exception");
-	#endif
 	if(out_value != NULL)
 		memcpy(out_value , binded_buffer->bytes + index * binded_buffer->element_size , binded_buffer->element_size) ;
 	if(BUFis_auto_managed())
@@ -579,24 +529,13 @@ function_signature(void, BUFremove_at_noshift, buf_ucount_t index , void* out_va
 		BUFbind(previous_binded_buffer); 
 	}
 	memset(binded_buffer->bytes + index * binded_buffer->element_size , 0 , binded_buffer->element_size); 
-	#if BUFFER_LIB_VERSION >= 0x0015
 	return true;
-	#endif
 }
 
-#if BUFFER_LIB_VERSION >= 0x0015
 function_signature(bool, BUFremove_at, buf_ucount_t index , void* out_value)
-#else
-function_signature(void, BUFremove_at, buf_ucount_t index , void* out_value)
-#endif
 {
-	#if BUFFER_LIB_VERSION >= 0x0015
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", false);
 	GOOD_ASSERT(index < binded_buffer->element_count,"Index Out of Range Exception", false);
-	#else
-	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
-	GOOD_ASSERT(index < binded_buffer->element_count,"Index Out of Range Exception");
-	#endif
 	--(binded_buffer->element_count); 
 	if(out_value != NULL)
 		memcpy(out_value , binded_buffer->bytes + index * binded_buffer->element_size , binded_buffer->element_size); 
@@ -613,10 +552,9 @@ function_signature(void, BUFremove_at, buf_ucount_t index , void* out_value)
 		}
 	}
 	memset(dst_ptr , 0 , binded_buffer->element_size); 
-	#if BUFFER_LIB_VERSION >= 0x0015
 	return true;
-	#endif
 }
+
 function_signature(bool, BUFremove_noshift, void* object, bool (*comparer)(void*, void*))
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", false);
@@ -639,6 +577,7 @@ function_signature(bool, BUFremove_noshift, void* object, bool (*comparer)(void*
 	}
 	return false; 
 }
+
 function_signature(bool, BUFremove, void* object, bool (*comparer)(void*, void*))
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", false);
@@ -655,27 +594,30 @@ function_signature(bool, BUFremove, void* object, bool (*comparer)(void*, void*)
 	}
 	return false; 
 }
+
 function_signature_void(void, BUFfit)
 {
-	//TODO
-	//Replace this with BUFresize(binded_buffer->element_count)
+	//TODO: Replace this with BUFresize(binded_buffer->element_count)
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
 	binded_buffer->bytes = (uint8_t*)realloc(binded_buffer->bytes , binded_buffer->element_count * binded_buffer->element_size); 
 	if(binded_buffer->element_count != 0)
 	GOOD_ASSERT((binded_buffer->bytes != NULL), "Memory Allocation Failure Exception");
 	binded_buffer->capacity = binded_buffer->element_count;
 }
+
 function_signature_void(void*, BUFpeek_ptr)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", NULL);
 	if(binded_buffer->element_count == 0) return NULL; 
 	return binded_buffer->bytes + (binded_buffer->element_count - 1) * binded_buffer->element_size;
 }
+
 function_signature(void, BUFpeek, void* out_value)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
 	memcpy(out_value , binded_buffer->bytes + (binded_buffer->element_count - 1) * binded_buffer->element_size , binded_buffer->element_size) ;   
 }
+
 function_signature(void, BUFpop, void* out_value)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
@@ -685,17 +627,6 @@ function_signature(void, BUFpop, void* out_value)
 		memcpy(out_value , binded_buffer->bytes + binded_buffer->element_count * binded_buffer->element_size , binded_buffer->element_size) ; 
 }
 
-#if BUFFER_LIB_VERSION == 0x0013
-function_signature(buf_count_t, BUFfind_index_of, void* value, bool (*comparer)(void*, void*))
-{
-	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", BUF_INVALID_INDEX);
-	uint8_t* cursor = binded_buffer->bytes; 
-	for(int i = 0; i < BUFget_element_count(); i++, cursor += BUFget_element_size())
-		if(comparer(value,cursor))
-			return i; 
-	return BUF_INVALID_INDEX;
-}
-#else
 function_signature(buf_ucount_t, BUFfind_index_of, void* value, bool (*comparer)(void*, void*))
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception", BUF_INVALID_INDEX);
@@ -705,10 +636,7 @@ function_signature(buf_ucount_t, BUFfind_index_of, void* value, bool (*comparer)
 			return i; 
 	return BUF_INVALID_INDEX;
 }
-#endif
 
-//TODO: 
-//Modified in version 1.6
 function_signature(void, BUFpush, void* in_value)
 {
 	GOOD_ASSERT(binded_buffer != NULL, "Binded Buffer Is NULL Exception");
