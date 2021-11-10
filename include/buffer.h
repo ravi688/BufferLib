@@ -324,14 +324,12 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 #	ifndef CALLTRACE_DEBUG
 #		define CALLTRACE_DEBUG
 #	endif
-#	define GOOD_ASSERT(bool_value, string, ...) do { if(!(bool_value)) {  printf("[Error] %s, at %lu, %s, %s\n", string, __line__, __function__, __file__); exit(-1); } } while(false)
 #elif defined(BUF_RELEASE)
 #	ifndef CALLTRACE_RELEASE
 #		define CALLTRACE_RELEASE
 #	endif
-#	define GOOD_ASSERT(bool_value, string, ...)
 #endif
-#include <calltrace.h>
+#include <calltrace/calltrace.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -447,6 +445,7 @@ function_signature(void, BUFpeek, void* out_value);
 function_signature_void(void*, BUFpeek_ptr); 
 function_signature(void, BUFpop, void* out_value); 
 function_signature(void, BUFpush, void* in_value); 
+function_signature(void, BUFpushv, void* in_value, buf_ucount_t count); 
 function_signature(bool, BUFremove, void* object, bool (*comparer)(void*, void*));
 function_signature(bool, BUFremove_noshift, void* object, bool (*comparer)(void*, void*));
 function_signature(void, BUFclear, void* clear_value); 
@@ -499,6 +498,7 @@ function_signature(void, buf_peek, BUFFER* buffer, void* out_value);
 function_signature(void*, buf_peek_ptr, BUFFER* buffer); 
 function_signature(void, buf_pop, BUFFER* buffer, void* out_value); 
 function_signature(void, buf_push, BUFFER* buffer, void* in_value); 
+function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_ucount_t count); 
 function_signature(bool, buf_remove, BUFFER* buffer, void* object, bool (*comparer)(void*, void*));
 function_signature(bool, buf_remove_noshift, BUFFER* buffer, void* object, bool (*comparer)(void*, void*));
 function_signature(void, buf_clear, BUFFER* buffer, void* clear_value); 
@@ -549,6 +549,7 @@ function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*on_pre_re
 #define BUFgetptr_at(...) 									define_alias_function_macro(BUFgetptr_at, __VA_ARGS__)
 #define BUFpop(...) 												define_alias_function_macro(BUFpop, __VA_ARGS__)
 #define BUFpush(...) 												define_alias_function_macro(BUFpush, __VA_ARGS__)
+#define BUFpushv(...) 											define_alias_function_macro(BUFpushv, __VA_ARGS__)
 #define BUFremove(...) 											define_alias_function_macro(BUFremove, __VA_ARGS__)
 #define BUFremove_noshift(...) 							define_alias_function_macro(BUFremove_noshift, __VA_ARGS__)
 #define BUFclear(...) 											define_alias_function_macro(BUFclear, __VA_ARGS__)
@@ -603,6 +604,7 @@ function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*on_pre_re
 #define buf_getptr_at(...) 									define_alias_function_macro(buf_getptr_at, __VA_ARGS__)
 #define buf_pop(...) 												define_alias_function_macro(buf_pop, __VA_ARGS__)
 #define buf_push(...) 											define_alias_function_macro(buf_push, __VA_ARGS__)
+#define buf_pushv(...) 											define_alias_function_macro(buf_pushv, __VA_ARGS__)
 #define buf_remove(...) 										define_alias_function_macro(buf_remove, __VA_ARGS__)
 #define buf_remove_noshift(...) 						define_alias_function_macro(buf_remove_noshift, __VA_ARGS__)
 #define buf_clear(...) 											define_alias_function_macro(buf_clear, __VA_ARGS__)

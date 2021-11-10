@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef BUF_DEBUG
+#	define GOOD_ASSERT(bool_value, string) do { if(!(bool_value)) {  log_fetal_err("Assertion Failed: %s\n", string); } } while(false)
+#else
+#	define GOOD_ASSERT(...)
+#endif
+
 bool equal_ptr(void* ptr1, void* ptr2)
 {
 	return (*(char**)ptr1) == (*(char**)ptr2);
@@ -36,8 +42,22 @@ function_signature(BUFFER*, read_file, const char* file_name)
 
 bool cmp_float(void* f1, void* f2) { return (*(float*)f1) == (*(float*)f2); }
 
+void test_pushv()
+{
+	BUFFER buffer = buf_create(sizeof(double), 0, 0);
+	double values[4] = { 100.0, 200.0, 300.0, 400.0 };
+	buf_pushv(&buffer, values, 4);
+
+	for(buf_ucount_t i = 0; i < buf_get_element_count(&buffer); i++)
+		printf("%f ", *(double*)buf_getptr_at(&buffer, i));
+
+	buf_free(&buffer);
+}
+
 int main()
 {
+
+	test_pushv();
 	int __a = 100;
 	bool result = BUFstart_default_testing();
 	if(!result)
