@@ -3,7 +3,7 @@ TARGET_STATIC_LIB_DIR = ./lib
 TARGET = main
 
 #Dependencies
-DEPENDENCY_LIBS = 
+DEPENDENCY_LIBS = ./dependencies/CallTrace/lib/calltrace.a
 DEPENDENCY_INCLUDES = ./dependencies/ ./dependencies/CallTrace/include
 
 INCLUDES= -I.\include $(addprefix -I, $(DEPENDENCY_INCLUDES))
@@ -33,6 +33,7 @@ ARCHIVER = ar
 all: release
 lib-static: lib-static-release
 lib-static-debug: DEFINES += $(DEBUG_DEFINES)
+lib-static-debug: COMPILER_FLAGS += -g
 lib-static-debug: __STATIC_LIB_COMMAND = lib-static-debug
 lib-static-debug: $(TARGET_STATIC_LIB)
 lib-static-release: DEFINES += $(RELEASE_DEFINES)
@@ -42,6 +43,7 @@ release: DEFINES += $(RELEASE_DEFINES)
 release: __STATIC_LIB_COMMAND = lib-static-release
 release: $(TARGET)
 debug: DEFINES += $(DEBUG_DEFINES)
+debug: COMPILER_FLAGS += -g
 debug: __STATIC_LIB_COMMAND = lib-static-debug
 debug: $(TARGET)
 
@@ -67,8 +69,8 @@ $(TARGET_STATIC_LIB) : PRINT_MESSAGE $(filter-out source/main.o, $(OBJECTS)) | $
 
 $(TARGET): $(DEPENDENCY_LIBS) $(TARGET_STATIC_LIB) source/main.o
 	$(COMPILER) $(COMPILER_FLAGS) source/main.o $(LIBS) \
-	$(addprefix -L, $(dir $(DEPENDENCY_LIBS) $(TARGET_STATIC_LIB))) \
-	$(addprefix -l:, $(notdir $(DEPENDENCY_LIBS) $(TARGET_STATIC_LIB))) \
+	$(addprefix -L, $(dir $(TARGET_STATIC_LIB) $(DEPENDENCY_LIBS) )) \
+	$(addprefix -l:, $(notdir $(TARGET_STATIC_LIB) $(DEPENDENCY_LIBS) )) \
 	-o $@
 
 clean: 
@@ -76,5 +78,6 @@ clean:
 	del main.exe
 	del $(subst /,\, $(TARGET_STATIC_LIB))
 	rmdir $(subst /,\, $(TARGET_STATIC_LIB_DIR))
+	$(MAKE) --directory=./dependencies/CallTrace clean
 # 	$(MAKE) --directory=./dependencies/HPML clean
 # 	$(MAKE) --directory=./dependencies/tgc clean
