@@ -39,11 +39,12 @@ all: dgraph release
 	echo digraph $(PROJECT_NAME) { $(PROJECT_NAME); } > $@
 	@echo [Log] $@ created successfully!
 
-$(DEPENDENCIES_DIR): 
+$(DEPENDENCIES_DIR) $(SHARED_DEPENDENCIES_DIR): 
 	mkdir $(subst /,\,$@)
 	@echo [Log] $@ created successfully!
 
-init: $(PROJECT_NAME).gv $(DEPENDENCIES_DIR) 
+
+init: $(PROJECT_NAME).gv $(DEPENDENCIES_DIR) $(SHARED_DEPENDENCIES_DIR)
 	@echo [Log] $(PROJECT_NAME) init successfully!
 #-------------------------------------------
 
@@ -54,7 +55,7 @@ init: $(PROJECT_NAME).gv $(DEPENDENCIES_DIR)
 DGRAPH_TARGET = ./dependency_graph/$(PROJECT_NAME).png
 DGRAPH_TARGET_DIR = dependency_graph
 DGRAPH_SCRIPT = $(PROJECT_NAME).gv
-DGRAPH_INCLUDES = -I./$(addprefix -I, $(__DEPENDENCIES) $(__SHARED_DEPENDENCIES))
+DGRAPH_INCLUDES = $(addprefix -I, $(__DEPENDENCIES) $(__SHARED_DEPENDENCIES))
 DGRAPH_COMPILER = dot
 DGRAPH_FLAGS = -Tpng
 
@@ -176,7 +177,6 @@ bin-clean:
 	rmdir $(subst /,\, $(TARGET_STATIC_LIB_DIR))
 	$(MAKE) --directory=../../shared-dependencies/CallTrace clean
 	@echo [Log] Binaries cleaned successfully!
-# 	$(MAKE) --directory=./dependencies/BufferLib clean
 # 	$(MAKE) --directory=./dependencies/HPML clean
 # 	$(MAKE) --directory=../../shared-dependencies/BufferLib clean
 #  	$(MAKE) --directory=./dependencies/tgc clean
@@ -187,6 +187,6 @@ bin-clean:
 #		Cleaning
 #-------------------------------------------
 .PHONY: clean
-clean: bin-clean dgraph-clean
+clean: dgraph-clean bin-clean 
 	@echo [Log] All cleaned successfully!
 #-------------------------------------------
