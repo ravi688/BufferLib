@@ -188,6 +188,6 @@ bin-clean:
 #		Cleaning
 #-------------------------------------------
 .PHONY: clean
-clean: dgraph-clean bin-clean 
+clean: bin-clean 
 	@echo [Log] All cleaned successfully!
 #-------------------------------------------
