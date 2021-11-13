@@ -1,0 +1,9 @@
+
+digraph BufferLib {
+
+	#define digraph subgraph
+	#include <CallTrace.gv>
+	#undef digraph
+
+	CallTrace -> BufferLib;	
+}
