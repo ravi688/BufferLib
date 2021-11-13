@@ -1,8 +1,8 @@
 
 digraph BufferLib {
 
-	#define subgraph digraph
-	#include <dependencies/CallTrace/CallTrace.gv>
+	#define digraph subgraph
+	#include <CallTrace.gv>
 	#undef digraph
 
 	CallTrace -> BufferLib;	
