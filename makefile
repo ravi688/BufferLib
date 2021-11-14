@@ -15,8 +15,8 @@ PROJECT_NAME = BufferLib
 STATIC_LIB_NAME = bufferlib.a
 DYNAMIC_LIB_NAME = #bufferlib.dll
 EXECUTABLE_NAME = main.exe
-DEPENDENCIES = CallTrace
-DEPENDENCY_LIBS = CallTrace/lib/calltrace.a
+DEPENDENCIES = ../../../shared-dependencies/CallTrace
+DEPENDENCY_LIBS = ../../../shared-dependencies/CallTrace/lib/calltrace.a
 DEPENDENCIES_DIR = ./dependencies
 SHARED_DEPENDENCIES = #CallTrace
 SHARED_DEPENDENCY_LIBS = #CallTrace/lib/calltrace.a
@@ -176,7 +176,7 @@ bin-clean:
 	del $(subst /,\, $(TARGET_STATIC_LIB))
 	rmdir $(subst /,\, $(TARGET_STATIC_LIB_DIR))
 	@echo [Log] Binaries cleaned successfully!
-	$(MAKE) --directory=./dependencies/CallTrace clean
+	$(MAKE) --directory=./dependencies/../../../shared-dependencies/CallTrace clean
 # 	$(MAKE) --directory=./shared-dependencies/CallTrace clean
 # 	$(MAKE) --directory=./dependencies/HPML clean
 # 	$(MAKE) --directory=../../shared-dependencies/BufferLib clean
