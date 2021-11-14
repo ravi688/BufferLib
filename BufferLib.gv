@@ -1,4 +1,6 @@
 
+#pragma once
+
 digraph BufferLib {
 
 	#define digraph subgraph
