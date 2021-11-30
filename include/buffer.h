@@ -650,6 +650,10 @@ function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*on_pre_re
 #define buf_set_on_pre_resize(...) 					define_alias_function_macro(buf_set_on_pre_resize, __VA_ARGS__)
 
 
+/*Extensions*/
+#define buf_get_ptr_at(buffer, index) buf_getptr_at(buffer, index)
+#define buf_get_ptr_at_typeof(buffer, type, index) ((type*)buf_getptr_at(buffer, index))
+
 // #ifdef USE_LEGACY
 // /*Begin: BUFFER*/
 // void BUFreverseb(void* ptr_to_buffer , buf_ucount_t element_size, buf_ucount_t element_count); 
