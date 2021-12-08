@@ -521,6 +521,7 @@ function_signature(void, buf_resize, BUFFER* buffer, buf_ucount_t new_capacity)
 {
 	CALLTRACE_BEGIN();
 	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");
+	GOOD_ASSERT(new_capacity != 0, "new_capacity == 0");
 	if(new_capacity == buffer->capacity)
 		CALLTRACE_RETURN();
 	buf_ucount_t new_buffer_size = new_capacity * buffer->element_size + buffer->offset; 
