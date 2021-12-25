@@ -330,9 +330,18 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 #	endif
 #endif
 #include <calltrace/calltrace.h>
-#include <stdint.h>
-#include <stdbool.h>
 
+#ifdef __cplusplus
+#	include <cstdint>
+#	include <cstdbool>
+#else
+#	include <stdint.h>
+#	include <stdbool.h>
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*CONFIGURATION*/
 /*********************************************************************/
@@ -654,6 +663,10 @@ function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*on_pre_re
 #define buf_get_ptr_at(buffer, index) buf_getptr_at(buffer, index)
 #define buf_get_ptr_at_typeof(buffer, type, index) ((type*)buf_getptr_at(buffer, index))
 
+#ifdef __cplusplus
+}
+#endif
+
 // #ifdef USE_LEGACY
 // /*Begin: BUFFER*/
 // void BUFreverseb(void* ptr_to_buffer , buf_ucount_t element_size, buf_ucount_t element_count); 
@@ -837,3 +850,4 @@ function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*on_pre_re
 
 // #endif
 // #endif
+
