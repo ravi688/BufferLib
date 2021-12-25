@@ -1,0 +1,13 @@
+
+
+digraph BufferLibcpp 
+{
+	#define digraph subgraph
+	#include <CallTrace.gv>
+	#undef digraph
+	#define digraph subgraph
+	#include <BufferLib.gv>
+	#undef digraph
+	CallTrace -> BufferLibcpp; 
+	BufferLib -> BufferLibcpp;
+} 
