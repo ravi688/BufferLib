@@ -1,4 +1,9 @@
+
 #include <buffer.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct BUFFERTest
 {
@@ -50,3 +55,8 @@ void test_BUFfree();
 
 bool BUFstart_testing(BUFFERTest* test);
 bool BUFstart_default_testing();
+
+#ifdef __cplusplus
+}
+#endif
+
