@@ -55,7 +55,11 @@ function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count)
 	buf_ucount_t previous_element_count = buffer->element_count;
 	buffer->element_count += count; 
 	if(buffer->capacity <= 0)
+	{
 		buffer->capacity = 1;
+		buffer->bytes = malloc(buffer->capacity * buffer->element_size);
+		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
+	}
 	buf_ucount_t previous_capacity = buffer->capacity;
 
 	while(buffer->capacity < buffer->element_count)
