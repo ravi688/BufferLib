@@ -109,7 +109,7 @@ function_signature(void, buf_insert_pseudo, BUFFER* buffer, buf_ucount_t index, 
 
 	// if space is insufficient then re-allocate
 	buf_ucount_t previous_capacity = buffer->capacity;
-	buffer->capacity == (buffer->capacity == 0) ? 1 : buffer->capacity;
+	buffer->capacity = (buffer->capacity == 0) ? 1 : buffer->capacity;
 	while(buffer->capacity < buffer->element_count)
 		buffer->capacity <<= 1;
 	if(previous_capacity != buffer->capacity)
@@ -641,7 +641,7 @@ function_signature(void, buf_insert_at, BUFFER* buffer, buf_ucount_t index , voi
 
 	// if space is insufficient then re-allocate
 	buf_ucount_t previous_capacity = buffer->capacity;
-	buffer->capacity == (buffer->capacity == 0) ? 1 : buffer->capacity;
+	buffer->capacity = (buffer->capacity == 0) ? 1 : buffer->capacity;
 	while(buffer->capacity < buffer->element_count)
 		buffer->capacity <<= 1;
 	if(previous_capacity != buffer->capacity)
