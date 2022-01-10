@@ -2,12 +2,27 @@
 #include <buffer.hpp>
 #include <iostream>
 #include <cassert>
+#include <cstring>
 
 using namespace BufferLib;
 
 
 int main()
 {
+
+	Buffer<char> string = Buffer<char>({ 'R', 'A', 'V', 'I' , 0 });
+
+	string.insertPseudo(2, 2);
+	char* ptr = string.getPtrAt(2);
+	ptr[0] = '5';
+	ptr[1] = '&';
+	string.log();
+	std::cout << strlen(string) + 1 << std::endl;
+	string.insertAt(strlen(string), '5');
+ 	
+	for(char value: string)
+		std::cout << value;
+	std::cout << std::endl;
 
 	Buffer<int> buffer = Buffer<int> ({ 1, 3, 5, 6 });
 

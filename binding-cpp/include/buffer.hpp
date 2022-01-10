@@ -32,6 +32,8 @@ namespace BufferLib
 
 		~Buffer() { buf_free(&handle); }
 
+		inline operator T*() { return (T*)buf_get_ptr(&handle); }
+
 		inline void setOnPostResize(void (*onPostResize)(void)) const { buf_set_on_post_resize(&handle, onPostResize); }
 		inline void setOnPreResize(void (*onPreResize)(void)) const { buf_set_on_pre_resize(&handle, onPreResize); }
 		inline void setOnFree(void (*onFree)(void)) const { buf_set_on_free(&handle, onFree); }
