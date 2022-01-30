@@ -662,6 +662,15 @@ function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*on_pre_re
 /*Extensions*/
 #define buf_get_ptr_at(buffer, index) buf_getptr_at(buffer, index)
 #define buf_get_ptr_at_typeof(buffer, type, index) ((type*)buf_getptr_at(buffer, index))
+#define buf_push_null(buffer) buf_push_char(buffer, 0)
+#define buf_push_newline(buffer) buf_push_char(buffer, '\n')
+
+#define buf_printf(...) define_alias_function_macro(buf_printf, __VA_ARGS__)
+#define buf_push_string(...) define_alias_function_macro(buf_push_string, __VA_ARGS__)
+#define buf_push_char(...) define_alias_function_macro(buf_push_char, __VA_ARGS__)
+function_signature(void, buf_printf, BUFFER* string_buffer, char* buffer, const char* format_string, ...);
+function_signature(void, buf_push_string, BUFFER* string_buffer, const char* string);
+function_signature(void, buf_push_char, BUFFER* buffer, char value);
 
 #ifdef __cplusplus
 }
