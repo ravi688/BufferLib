@@ -672,6 +672,20 @@ function_signature(void, buf_printf, BUFFER* string_buffer, char* buffer, const 
 function_signature(void, buf_push_string, BUFFER* string_buffer, const char* string);
 function_signature(void, buf_push_char, BUFFER* buffer, char value);
 
+
+#define buf_char_comparer buf_s8_comparer
+#define buf_int_comparer buf_s32_comparer
+bool buf_string_comparer(void*, void*);
+bool buf_ptr_comparer(void*, void*);
+bool buf_s8_comparer(void*, void*);
+bool buf_s16_comparer(void*, void*);
+bool buf_s32_comparer(void*, void*);
+bool buf_u8_comparer(void*, void*);
+bool buf_u16_comparer(void*, void*);
+bool buf_u32_comparer(void*, void*);
+bool buf_float_comparer(void*, void*);
+bool buf_double_comparer(void*, void*);
+
 #ifdef __cplusplus
 }
 #endif

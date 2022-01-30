@@ -871,6 +871,58 @@ function_signature(void, buf_push_char, BUFFER* buffer, char value)
 	CALLTRACE_END();
 }
 
+bool buf_string_comparer(void* v1, void* v2)
+{
+	return strcmp(*(char**)v1, *(char**)v2) == 0;
+}
+
+bool buf_ptr_comparer(void* v1, void* v2)
+{
+	return (*(char**)v1) == (*(char**)v2);
+}
+
+bool buf_s8_comparer(void* v1, void* v2)
+{
+	return (*(int8_t*)v1) == (*(int8_t*)v2);
+}
+
+bool buf_s16_comparer(void* v1, void* v2)
+{
+	return (*(int16_t*)v1) == (*(int16_t*)v2);
+}
+
+bool buf_s32_comparer(void* v1, void* v2)
+{
+	return (*(int32_t*)v1) == (*(int32_t*)v2);
+}
+
+bool buf_u8_comparer(void* v1, void* v2)
+{
+	return (*(uint8_t*)v1) == (*(uint8_t*)v2);
+}
+
+bool buf_u16_comparer(void* v1, void* v2)
+{
+	return (*(uint16_t*)v1) == (*(uint16_t*)v2);
+}
+
+bool buf_u32_comparer(void* v1, void* v2)
+{
+	return (*(uint32_t*)v1) == (*(uint32_t*)v2);
+}
+
+bool buf_float_comparer(void* v1, void* v2)
+{
+	return (*(float*)v1) == (*(float*)v2);
+}
+
+bool buf_double_comparer(void* v1, void* v2)
+{
+	return (*(double*)v1) == (*(double*)v2);
+}
+
+
+
 #ifdef BUF_DEBUG
 static void check_pre_condition(BUFFER* buffer)
 {
