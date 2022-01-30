@@ -6,11 +6,14 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 #ifdef BUF_DEBUG
 #	define GOOD_ASSERT(bool_value, string) do { if(!(bool_value)) {  log_fetal_err("Assertion Failed: %s\n", string); } } while(false)
+	static void check_pre_condition(BUFFER* buffer);
 #else
 #	define GOOD_ASSERT(...)
+#	define check_pre_condition(buffer)
 #endif
 
 #define STACK_ALLOCATED_OBJECT  0x1
@@ -33,7 +36,7 @@ function_signature(void, BUFset_on_post_resize, void (*on_post_resize)(void)) { 
 function_signature(void, buf_set_on_post_resize, BUFFER* buffer, void (*on_post_resize)(void))
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	buffer->on_post_resize = on_post_resize;
 	CALLTRACE_END();
 }
@@ -42,7 +45,7 @@ function_signature(void, BUFset_on_pre_resize, void (*on_pre_resize)(void)) { CA
 function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*on_pre_resize)(void))
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	buffer->on_pre_resize = on_pre_resize;
 	CALLTRACE_END();
 }
@@ -51,7 +54,7 @@ function_signature(void, BUFpush_pseudo, buf_ucount_t count) { CALLTRACE_BEGIN()
 function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	buf_ucount_t previous_element_count = buffer->element_count;
 	buffer->element_count += count; 
 	if(buffer->capacity <= 0)
@@ -88,7 +91,7 @@ function_signature(void, BUFpop_pseudo, buf_ucount_t count) { CALLTRACE_BEGIN();
 function_signature(void, buf_pop_pseudo, BUFFER* buffer, buf_ucount_t count)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	GOOD_ASSERT(count <= buffer->element_count, "Buffer Underflow Exception");
 	buffer->element_count -= count;	
 	CALLTRACE_END();
@@ -138,7 +141,7 @@ function_signature(void, BUFremove_pseudo, buf_ucount_t index, buf_ucount_t coun
 function_signature(void, buf_remove_pseudo, BUFFER* buffer, buf_ucount_t index, buf_ucount_t count)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	GOOD_ASSERT(index < buffer->element_count, "Index Out Of Range Exception");
 	GOOD_ASSERT(count <= buffer->element_count,"Buffer Underflow Exception");
 	buffer->element_count -= count; 
@@ -158,7 +161,7 @@ function_signature(void, BUFset_auto_managed, bool value) { CALLTRACE_BEGIN(); b
 function_signature(void, buf_set_auto_managed, BUFFER* buffer, bool value)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception"); 
+	check_pre_condition(buffer); 
 	if(value && (buffer->auto_managed_empty_blocks == BUF_INVALID))
 			buffer->auto_managed_empty_blocks = BUFcreate(BUF_INVALID, sizeof(void*), 0, 0); 
 	else if(!value && (buffer->auto_managed_empty_blocks != BUF_INVALID))
@@ -171,7 +174,7 @@ function_signature_void(buf_ucount_t, BUFget_offset) { CALLTRACE_BEGIN(); CALLTR
 function_signature(buf_ucount_t, buf_get_offset, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception"); 
+	check_pre_condition(buffer); 
 	CALLTRACE_RETURN(buffer->offset); 
 }
 
@@ -179,7 +182,7 @@ function_signature_void(buf_ucount_t, BUFget_capacity) { CALLTRACE_BEGIN(); CALL
 function_signature(buf_ucount_t, buf_get_capacity, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception"); 
+	check_pre_condition(buffer); 
 	CALLTRACE_RETURN(buffer->capacity); 
 }
 
@@ -187,7 +190,7 @@ function_signature_void(buf_ucount_t, BUFget_element_count) { CALLTRACE_BEGIN();
 function_signature(buf_ucount_t, buf_get_element_count, BUFFER* buffer) 
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception"); 
+	check_pre_condition(buffer); 
 	CALLTRACE_RETURN(buffer->element_count); 
 } 
 
@@ -195,7 +198,7 @@ function_signature_void(buf_ucount_t, BUFget_element_size) { CALLTRACE_BEGIN(); 
 function_signature(buf_ucount_t, buf_get_element_size, BUFFER* buffer)
 { 
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception"); 
+	check_pre_condition(buffer); 
 	CALLTRACE_RETURN(buffer->element_size); 
 } 
 
@@ -203,7 +206,7 @@ function_signature_void(void*, BUFget_ptr) { CALLTRACE_BEGIN(); CALLTRACE_RETURN
 function_signature(void*, buf_get_ptr, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception"); 
+	check_pre_condition(buffer); 
 	CALLTRACE_RETURN(buffer->bytes); 
 } 
 
@@ -211,7 +214,7 @@ function_signature(void, BUFset_offset, buf_ucount_t offset) { CALLTRACE_BEGIN()
 function_signature(void, buf_set_offset, BUFFER* buffer, buf_ucount_t offset)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	buffer->offset = offset;
 	CALLTRACE_END();
 }
@@ -220,7 +223,7 @@ function_signature(void, BUFset_capacity, buf_ucount_t capacity) { CALLTRACE_BEG
 function_signature(void, buf_set_capacity, BUFFER* buffer, buf_ucount_t capacity)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
  	buffer->capacity = capacity;
  	CALLTRACE_END();
 }
@@ -229,7 +232,7 @@ function_signature(void, BUFset_element_count, buf_ucount_t element_count) { CAL
 function_signature(void, buf_set_element_count, BUFFER* buffer, buf_ucount_t element_count)
 { 
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	buffer->element_count = element_count; 
 	CALLTRACE_END();
 }
@@ -238,7 +241,7 @@ function_signature(void, BUFset_element_size, buf_ucount_t element_size) { CALLT
 function_signature(void, buf_set_element_size, BUFFER* buffer, buf_ucount_t element_size)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	buffer->element_size = element_size; 
 	CALLTRACE_END();
 } 
@@ -247,7 +250,7 @@ function_signature(void, BUFset_ptr, void* ptr) { CALLTRACE_BEGIN(); buf_set_ptr
 function_signature(void, buf_set_ptr, BUFFER* buffer, void* ptr)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	buffer->bytes = ptr; 
 	CALLTRACE_END();
 }
@@ -262,7 +265,7 @@ function_signature_void(bool, BUFis_auto_managed) { CALLTRACE_BEGIN(); CALLTRACE
 function_signature(bool, buf_is_auto_managed, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	CALLTRACE_RETURN(buffer->is_auto_managed); 
 }
 
@@ -303,7 +306,7 @@ function_signature(void, BUFtraverse_elements, buf_ucount_t start, buf_ucount_t 
 function_signature(void, buf_traverse_elements, BUFFER* buffer, buf_ucount_t start, buf_ucount_t end, void (*func)(void* /*element ptr*/, void* /*args ptr*/), void* args)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception"); 
+	check_pre_condition(buffer); 
 	GOOD_ASSERT((start <= end) && (start < buffer->element_count) && (end < buffer->element_count), "(start <= end) && (start < buffer->element_count) && (end < buffer->element_count) evaulates to false");
 	for(buf_ucount_t i = start; i <= end; i++)
 	 		func(buf_getptr_at(buffer, i), args);
@@ -314,7 +317,7 @@ function_signature_void(static bool, BUFis_stack_allocated) { CALLTRACE_BEGIN();
 function_signature(static bool, buf_is_stack_allocated, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	CALLTRACE_RETURN((buffer->info & STACK_ALLOCATED_OBJECT) == STACK_ALLOCATED_OBJECT); 
 }
 
@@ -322,7 +325,7 @@ function_signature_void(static bool, BUFis_heap_allocated) { CALLTRACE_BEGIN(); 
 function_signature(static bool, buf_is_heap_allocated, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	CALLTRACE_RETURN((buffer->info & HEAP_ALLOCATED_OBJECT) == HEAP_ALLOCATED_OBJECT); 
 }
 
@@ -330,7 +333,7 @@ function_signature_void(void, BUFfree) { CALLTRACE_BEGIN(); buf_free(binded_buff
 function_signature(void, buf_free, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "Buffer Is NULL Exception");
+	check_pre_condition(buffer);
 	if((buffer->free != NULL) && (buffer->element_count > 0))
 		buf_traverse_elements(buffer, 0, buf_get_element_count(buffer)- 1, (void (*)(void*, void*))(buffer->free), NULL);
 	if(buffer->bytes != NULL)
@@ -354,7 +357,7 @@ function_signature_void(BUFFER*, BUFget_clone)
 function_signature(BUFFER, buf_get_clone, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");
+	check_pre_condition(buffer);
 	CALLTRACE_RETURN(buf_copy_construct(buffer));
 }
 
@@ -362,7 +365,7 @@ function_signature(void, BUFmove_to, BUFFER* destination) { CALLTRACE_BEGIN(); b
 function_signature(void, buf_move_to, BUFFER* buffer, BUFFER* destination)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");
+	check_pre_condition(buffer);
 	GOOD_ASSERT(destination != NULL, "destination buffer is NULL Exception");
 	buf_copy_to(buffer, destination);
 	buf_free(buffer);
@@ -373,7 +376,7 @@ function_signature(void, BUFcopy_to, BUFFER* destination) { CALLTRACE_BEGIN(); b
 function_signature(void, buf_copy_to, BUFFER* buffer, BUFFER* destination)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");
+	check_pre_condition(buffer);
 	GOOD_ASSERT(destination != NULL, "destination buffer is NULL Exception");
 	GOOD_ASSERT(buffer != destination, "source and destination buffers are referencing to the same memory location"); 
 	GOOD_ASSERT(destination->element_size == buffer->element_size, "element size of the source and destination buffers are not identical");
@@ -413,7 +416,7 @@ function_signature(void, BUFset_on_free, void (*free)(void*)) { CALLTRACE_BEGIN(
 function_signature(void, buf_set_on_free, BUFFER* buffer, void (*free)(void*))
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");			
+	check_pre_condition(buffer);			
 	buffer->free = free;
 	CALLTRACE_END();
 }
@@ -479,7 +482,7 @@ function_signature(void, BUFget_at, buf_ucount_t index, void* out_value) { CALLT
 function_signature(void, buf_get_at, BUFFER* buffer, buf_ucount_t index, void* out_value)
 {	
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");			
+	check_pre_condition(buffer);			
 	GOOD_ASSERT(index < buffer->element_count,"index >= buffer->element_count, Index Out of Range Exception");
 	memcpy(out_value , buffer->bytes + index * buffer->element_size, buffer->element_size); 
 	CALLTRACE_END();
@@ -489,7 +492,7 @@ function_signature(void*, BUFgetptr_at, buf_ucount_t index) { CALLTRACE_BEGIN();
 function_signature(void*, buf_getptr_at, BUFFER* buffer, buf_ucount_t index)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");			
+	check_pre_condition(buffer);			
 	GOOD_ASSERT(index < buffer->element_count,"index >= buffer->element_count, Index Out of Range Exception");
 	CALLTRACE_RETURN(buffer->bytes + index * buffer->element_size); 
 }
@@ -498,7 +501,7 @@ function_signature(void, BUFset_at, buf_ucount_t index , void* in_value) { CALLT
 function_signature(void, buf_set_at, BUFFER* buffer, buf_ucount_t index , void* in_value)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");		
+	check_pre_condition(buffer);		
 	GOOD_ASSERT(index < buffer->element_count,"Index Out of Range Exception");
 	memcpy(buffer->bytes + index * buffer->element_size, in_value , buffer->element_size); 
 	CALLTRACE_END();
@@ -508,7 +511,7 @@ function_signature_void(void*, BUFget_offset_bytes) { CALLTRACE_BEGIN(); CALLTRA
 function_signature(void*, buf_get_offset_bytes, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");	
+	check_pre_condition(buffer);	
 	GOOD_ASSERT(buffer->offset != 0, "buffer->offset equals to Zero!");
 	CALLTRACE_RETURN(buffer->bytes + buffer->capacity * buffer->element_size);
 }
@@ -517,7 +520,7 @@ function_signature(void, BUFset_offset_bytes, void* offset_bytes) { CALLTRACE_BE
 function_signature(void, buf_set_offset_bytes, BUFFER* buffer, void* offset_bytes)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");	
+	check_pre_condition(buffer);	
 	GOOD_ASSERT(offset_bytes != NULL, "offset_bytes is NULL Exception");
 	GOOD_ASSERT(buffer->offset != 0, "buffer->offset equals to Zero!");
 	memcpy(buf_get_offset_bytes(buffer), offset_bytes, buffer->offset);
@@ -528,7 +531,7 @@ function_signature_void(buf_ucount_t, BUFget_buffer_size) { CALLTRACE_BEGIN(); C
 function_signature(buf_ucount_t, buf_get_buffer_size, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");	
+	check_pre_condition(buffer);	
 	CALLTRACE_RETURN(buffer->capacity * buffer->element_size  + buffer->offset);
 }
 
@@ -536,7 +539,7 @@ function_signature(void, BUFresize, buf_ucount_t new_capacity) { CALLTRACE_BEGIN
 function_signature(void, buf_resize, BUFFER* buffer, buf_ucount_t new_capacity)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");
+	check_pre_condition(buffer);
 	GOOD_ASSERT(new_capacity != 0, "new_capacity == 0");
 	if(new_capacity == buffer->capacity)
 		CALLTRACE_RETURN();
@@ -576,7 +579,7 @@ function_signature(void, BUFclear_buffer, void* clear_value) { CALLTRACE_BEGIN()
 function_signature(void, buf_clear_buffer, BUFFER* buffer, void* clear_value)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");		
+	check_pre_condition(buffer);		
 	if(clear_value == NULL)
 		memset(buffer->bytes, 0, buffer->capacity * buffer->element_size + buffer->offset); 
 	else
@@ -597,7 +600,7 @@ function_signature(void, BUFclear, void* clear_value) { CALLTRACE_BEGIN(); buf_c
 function_signature(void, buf_clear, BUFFER* buffer, void* clear_value)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");		
+	check_pre_condition(buffer);		
 	if(clear_value == NULL)
 		memset(buffer->bytes , 0 , buffer->element_count * buffer->element_size) ; 
 	else
@@ -617,7 +620,7 @@ function_signature(void, BUFinsert_at_noalloc, buf_ucount_t index , void* in_val
 function_signature(void, buf_insert_at_noalloc, BUFFER* buffer, buf_ucount_t index , void* in_value , void* out_value)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");	
+	check_pre_condition(buffer);	
 	GOOD_ASSERT(index < buffer->capacity,"Buffer Overflow Exception");
 	GOOD_ASSERT(buffer->element_count > index ,"Index should be less than buffer->element_count");
 	if(out_value != NULL)
@@ -672,7 +675,7 @@ function_signature(bool, BUFremove_at_noshift, buf_ucount_t index , void* out_va
 function_signature(bool, buf_remove_at_noshift, BUFFER* buffer, buf_ucount_t index , void* out_value)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");
+	check_pre_condition(buffer);
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
 	GOOD_ASSERT(index < binded_buffer->element_count,"index >= binded_buffer->element_count, Index Out of Range Exception");
 	if(out_value != NULL)
@@ -692,7 +695,7 @@ function_signature(bool, BUFremove_at, buf_ucount_t index , void* out_value) { C
 function_signature(bool, buf_remove_at, BUFFER* buffer, buf_ucount_t index , void* out_value)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");	
+	check_pre_condition(buffer);	
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
 	GOOD_ASSERT(index < buffer->element_count,"Index Out of Range Exception");
 	--(buffer->element_count); 
@@ -718,7 +721,7 @@ function_signature(bool, BUFremove_noshift, void* object, bool (*comparer)(void*
 function_signature(bool, buf_remove_noshift, BUFFER* buffer, void* object, bool (*comparer)(void*, void*))
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");	
+	check_pre_condition(buffer);	
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");	
 	void* cursor = buffer->bytes; 
 	for(buf_ucount_t i = 0; i < buffer->element_count; i++, cursor += buffer->element_size)
@@ -739,7 +742,7 @@ function_signature(bool, BUFremove, void* object, bool (*comparer)(void*, void*)
 function_signature(bool, buf_remove, BUFFER* buffer, void* object, bool (*comparer)(void*, void*))
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");
+	check_pre_condition(buffer);
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");	
 	void* cursor = buffer->bytes; 
 	for(buf_ucount_t i = 0; i < buffer->element_count; i++, cursor += buffer->element_size)
@@ -760,7 +763,7 @@ function_signature(void, buf_fit, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
 	//TODO: Replace this with BUFresize(binded_buffer->element_count)
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");	
+	check_pre_condition(buffer);	
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!"); 
 	buffer->bytes =  realloc(buffer->bytes , buffer->element_count * buffer->element_size); 
 	GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
@@ -772,7 +775,7 @@ function_signature_void(void*, BUFpeek_ptr) { CALLTRACE_BEGIN(); CALLTRACE_RETUR
 function_signature(void*, buf_peek_ptr, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");	
+	check_pre_condition(buffer);	
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!"); 
 	CALLTRACE_RETURN(buffer->bytes + (buffer->element_count - 1) * buffer->element_size);
 }
@@ -781,7 +784,7 @@ function_signature(void, BUFpeek, void* out_value) { CALLTRACE_BEGIN(); buf_peek
 function_signature(void, buf_peek, BUFFER* buffer, void* out_value)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");	
+	check_pre_condition(buffer);	
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
 	memcpy(out_value, buffer->bytes + (buffer->element_count - 1) * buffer->element_size , buffer->element_size); 
 	CALLTRACE_END();  
@@ -791,7 +794,7 @@ function_signature(void, BUFpop, void* out_value) { CALLTRACE_BEGIN(); buf_pop(b
 function_signature(void, buf_pop, BUFFER* buffer, void* out_value)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");	
+	check_pre_condition(buffer);	
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
 	--(buffer->element_count);
 	if(out_value != NULL)
@@ -803,7 +806,7 @@ function_signature(buf_ucount_t, BUFfind_index_of, void* value, bool (*comparer)
 function_signature(buf_ucount_t, buf_find_index_of, BUFFER* buffer, void* value, bool (*comparer)(void*, void*))
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");
+	check_pre_condition(buffer);
 	void* cursor = buffer->bytes; 
 	for(buf_ucount_t i = 0; i < buffer->element_count; i++, cursor += buffer->element_size)
 		if(comparer(value, cursor))
@@ -815,7 +818,7 @@ function_signature(void, BUFpush, void* in_value) { CALLTRACE_BEGIN(); buf_push(
 function_signature(void, buf_push, BUFFER* buffer, void* in_value)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");
+	check_pre_condition(buffer);
 	buf_ucount_t new_capacity = (buffer->capacity == 0) ? 1 : buffer->capacity; 
 	++(buffer->element_count);
 	while(new_capacity < buffer->element_count)
@@ -829,7 +832,7 @@ function_signature(void, BUFpushv, void* in_value, buf_ucount_t count) { CALLTRA
 function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_ucount_t count)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(buffer != NULL, "buffer is NULL Exception");
+	check_pre_condition(buffer);
 	buf_ucount_t new_capacity = (buffer->capacity == 0) ? 1 : buffer->capacity; 
 	buffer->element_count += count;
 	while(new_capacity < buffer->element_count)
@@ -839,3 +842,38 @@ function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_ucount_t
 		buf_set_at(buffer, buffer->element_count - count + i, in_value);
 	CALLTRACE_END(); 
 }
+
+function_signature(void, buf_printf, BUFFER* buffer, char* stage_buffer, const char* format_string, ...)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	va_list args;
+	va_start(args, format_string);
+	vsprintf(stage_buffer, format_string, args);
+	va_end(args);
+	buf_pushv(buffer, stage_buffer, strlen(stage_buffer));
+	CALLTRACE_END();
+}
+
+function_signature(void, buf_push_string, BUFFER* buffer, const char* string)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	buf_pushv(buffer, (char*)string, strlen(string));	
+	CALLTRACE_END();
+}
+
+function_signature(void, buf_push_char, BUFFER* buffer, char value)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	buf_push(buffer, &value);
+	CALLTRACE_END();
+}
+
+#ifdef BUF_DEBUG
+static void check_pre_condition(BUFFER* buffer)
+{
+	GOOD_ASSERT(buffer != NULL, "buffer is NULL");
+}
+#endif /*BUF_DEBUG*/
