@@ -1,2 +1,2 @@
-# TemplateRepository
-This repository contains template for a project in C language
+# BufferLib
+BufferLib is a small library for managing memory buffers
