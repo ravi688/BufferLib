@@ -56,6 +56,21 @@ void test_pushv()
 int main()
 {
 
+	BUFFER string_buffer = buf_create(sizeof(char), 0, 0);
+	buf_push_string(&string_buffer, "Hello World");
+	buf_push_newline(&string_buffer);
+	char stage_buffer[512];
+	buf_printf(&string_buffer, stage_buffer, "My name is %s\n", "Ravi Prakash Singh");
+	buf_printf(&string_buffer, stage_buffer, "My name is %s\n", "Ravi Prakash Singh");
+	buf_printf(&string_buffer, stage_buffer, "My name is %s\n", "Ravi Prakash Singh");
+	buf_printf(&string_buffer, stage_buffer, "My name is %s\n", "Ravi Prakash Singh");
+	buf_printf(&string_buffer, stage_buffer, "My name is %s\n", "Ravi Prakash Singh");
+	buf_printf(&string_buffer, stage_buffer, "My name is %s\n", "Ravi Prakash Singh");
+	buf_printf(&string_buffer, stage_buffer, "My name is %s\n", "Ravi Prakash Singh");
+	buf_push_null(&string_buffer);
+	puts(buf_get_ptr(&string_buffer));
+	buf_free(&string_buffer);
+
 	test_pushv();
 	int __a = 100;
 	bool result = BUFstart_default_testing();
