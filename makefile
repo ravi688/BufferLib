@@ -127,6 +127,9 @@ TARGET_DYNAMIC_IMPORT_LIB = $(addprefix $(dir $(TARGET_DYNAMIC_LIB)), $(addprefi
 .PHONY: lib-dynamic
 .PHONY: lib-dynamic-debug
 .PHONY: lib-dynamic-release
+.PHONY: lib-static-dynamic
+.PHONY: lib-static-dynamic-debug
+.PHONY: lib-static-dynamic-release
 .PHONY: release
 .PHONY: debug
 .PHONY: $(TARGET)	
@@ -152,6 +155,16 @@ lib-dynamic-release: DEFINES += $(RELEASE_DEFINES) -DBUILD_DYNAMIC_LIBRARY
 lib-dynamic-release: __STATIC_LIB_COMMAND = lib-static-release
 lib-dynamic-release: COMPILER_FLAGS += -fPIC
 lib-dynamic-release: $(TARGET_DYNAMIC_LIB)
+
+lib-static-dynamic: lib-static-dynamic-release
+lib-static-dynamic-debug: DEFINES += $(DEBUG_DEFINES) -DBUILD_DYNAMIC_LIBRARY
+lib-static-dynamic-debug: __STATIC_LIB_COMMAND = lib-static-dynamic-debug
+lib-static-dynamic-debug: COMPILER_FLAGS += -g -fPIC
+lib-static-dynamic-debug: $(TARGET_STATIC_LIB)
+lib-static-dynamic-release: DEFINES += $(RELEASE_DEFINES) -DBUILD_DYNAMIC_LIBRARY
+lib-static-dynamic-release: __STATIC_LIB_COMMAND = lib-static-dynamic-release
+lib-static-dynamic-release: COMPILER_FLAGS += -fPIC
+lib-static-dynamic-release: $(TARGET_STATIC_LIB)
 
 release: DEFINES += $(RELEASE_DEFINES) -DBUILD_EXECUTABLE
 release: __STATIC_LIB_COMMAND = lib-static-release
@@ -208,6 +221,7 @@ bin-clean:
 	rmdir $(subst /,\, $(TARGET_LIB_DIR))
 	$(MAKE) --directory=../../shared-dependencies/CallTrace clean
 	@echo [Log] Binaries cleaned successfully!
+# 	$(MAKE) --directory=./shared-dependencies/CallTrace clean
 # 	$(MAKE) --directory=./dependencies/HPML clean
 # 	$(MAKE) --directory=../../shared-dependencies/HPML clean
 #  	$(MAKE) --directory=./dependencies/tgc clean
