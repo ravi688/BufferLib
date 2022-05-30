@@ -672,9 +672,11 @@ BUF_API bool buf_ptr_comparer(void*, void*);
 BUF_API bool buf_s8_comparer(void*, void*);
 BUF_API bool buf_s16_comparer(void*, void*);
 BUF_API bool buf_s32_comparer(void*, void*);
+BUF_API bool buf_s64_comparer(void*, void*);
 BUF_API bool buf_u8_comparer(void*, void*);
 BUF_API bool buf_u16_comparer(void*, void*);
 BUF_API bool buf_u32_comparer(void*, void*);
+BUF_API bool buf_u64_comparer(void*, void*);
 BUF_API bool buf_float_comparer(void*, void*);
 BUF_API bool buf_double_comparer(void*, void*);
 
