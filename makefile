@@ -14,8 +14,11 @@
 PROJECT_NAME = BufferLib
 STATIC_LIB_NAME = bufferlib.a
 DYNAMIC_LIB_NAME = bufferlib.dll
-EXECUTABLE_NAME = main.exe
-DEPENDENCIES =  CallTrace
+EXECUTABLE_NAME = main
+EXTERNAL_INCLUDES = 
+EXTERNAL_LIBS = 
+
+DEPENDENCIES = CallTrace
 DEPENDENCY_LIBS = CallTrace/lib/calltrace.a
 DEPENDENCIES_DIR = ./dependencies
 SHARED_DEPENDENCIES = 
@@ -30,7 +33,11 @@ __DEPENDENCIES = $(addprefix $(DEPENDENCIES_DIR)/, $(DEPENDENCIES))
 __DEPENDENCY_LIBS = $(addprefix $(DEPENDENCIES_DIR)/, $(DEPENDENCY_LIBS))
 __SHARED_DEPENDENCIES = $(addprefix $(SHARED_DEPENDENCIES_DIR)/, $(SHARED_DEPENDENCIES))
 __SHARED_DEPENDENCY_LIBS = $(addprefix $(SHARED_DEPENDENCIES_DIR)/, $(SHARED_DEPENDENCY_LIBS))
+ifdef COMSPEC
 __EXECUTABLE_NAME = $(addsuffix .exe, $(basename $(EXECUTABLE_NAME)))
+else
+__EXECUTABLE_NAME = $(basename $(EXECUTABLE_NAME))
+endif
 .PHONY: all
 .PHONY: init
 all: dgraph release
@@ -102,10 +109,10 @@ TARGET = $(__EXECUTABLE_NAME)
 DEPENDENCY_INCLUDES = $(addsuffix /include, $(__DEPENDENCIES))
 SHARED_DEPENDENCY_INCLUDES = $(addsuffix /include, $(__SHARED_DEPENDENCIES))
 
-INCLUDES= -I.\include $(EXTERNAL_INCLUDES) $(addprefix -I, $(DEPENDENCY_INCLUDES) $(SHARED_DEPENDENCY_INCLUDES))
+INCLUDES= -I./include $(EXTERNAL_INCLUDES) $(addprefix -I, $(DEPENDENCY_INCLUDES) $(SHARED_DEPENDENCY_INCLUDES))
 SOURCES= $(wildcard source/*.c)
 OBJECTS= $(addsuffix .o, $(basename $(SOURCES)))
-LIBS = 
+LIBS = $(EXTERNAL_LIBS)
 
 #Flags and Defines
 DEBUG_DEFINES =  -DGLOBAL_DEBUG -DDEBUG -DLOG_DEBUG
@@ -212,26 +219,65 @@ $(TARGET): $(__DEPENDENCY_LIBS) $(__SHARED_DEPENDENCY_LIBS) $(TARGET_STATIC_LIB)
 	-o $@
 	@echo [Log] $(PROJECT_NAME) built successfully!
 
+RM := rm -f
+RM_DIR := rm -rf
+
 bin-clean: 
-	del $(addprefix source\, $(notdir $(OBJECTS)))
-	del $(__EXECUTABLE_NAME)
-	del $(subst /,\, $(TARGET_STATIC_LIB))
-	del $(subst /,\, $(TARGET_DYNAMIC_LIB))
-	del $(subst /,\, $(TARGET_DYNAMIC_IMPORT_LIB))
-	rmdir $(subst /,\, $(TARGET_LIB_DIR))
+	$(RM) $(addprefix source/, $(notdir $(OBJECTS)))
+	$(RM) $(__EXECUTABLE_NAME)
+	$(RM) $(TARGET_STATIC_LIB)
+	$(RM) $(TARGET_DYNAMIC_LIB)
+	$(RM) $(TARGET_DYNAMIC_IMPORT_LIB)
+	$(RM_DIR) $(TARGET_LIB_DIR)
 	@echo [Log] Binaries cleaned successfully!
 	$(MAKE) --directory=./dependencies/CallTrace clean
-# 	$(MAKE) --directory=./shared-dependencies/CallTrace clean
-# 	$(MAKE) --directory=./dependencies/HPML clean
-# 	$(MAKE) --directory=../../shared-dependencies/HPML clean
-#  	$(MAKE) --directory=./dependencies/tgc clean
 #-------------------------------------------
 
 
 #-------------------------------------------
 #		Cleaning
 #-------------------------------------------
+
+.PHONY: clean-project-internal
+
+clean-project-internal:
+	$(MAKE) -f $(addsuffix .makefile, $(PROJECT_NAME)) clean
+
 .PHONY: clean
-clean: bin-clean 
+clean: bin-clean clean-project-internal
 	@echo [Log] All cleaned successfully!
 #-------------------------------------------
+
+
+
+.PHONY: build
+.PHONY: build-run
+.PHONY: build-release
+.PHONY: build-debug
+.PHONY: run
+
+.PHONY: build-project-internal-debug
+.PHONY: build-project-internal-release
+
+build-project-internal-debug:
+	$(MAKE) -f $(addsuffix .makefile, $(PROJECT_NAME)) debug
+
+build-project-internal-release:
+	$(MAKE) -f $(addsuffix .makefile, $(PROJECT_NAME)) release
+
+build-release:
+	$(MAKE) build-project-internal-release
+	$(MAKE) lib-static-release
+	$(MAKE) release
+
+build-debug:
+	$(MAKE) build-project-internal-debug
+	$(MAKE) lib-static-debug
+	$(MAKE) debug
+
+build: build-debug
+
+build-run: build
+	$(__EXECUTABLE_NAME)
+
+run: build-run
