@@ -896,6 +896,11 @@ bool buf_s32_comparer(void* v1, void* v2)
 	return (*(int32_t*)v1) == (*(int32_t*)v2);
 }
 
+bool buf_s64_comparer(void* v1, void* v2)
+{
+	return (*(int64_t*)v1) == (*(int64_t*)v2);
+}
+
 bool buf_u8_comparer(void* v1, void* v2)
 {
 	return (*(uint8_t*)v1) == (*(uint8_t*)v2);
@@ -909,6 +914,11 @@ bool buf_u16_comparer(void* v1, void* v2)
 bool buf_u32_comparer(void* v1, void* v2)
 {
 	return (*(uint32_t*)v1) == (*(uint32_t*)v2);
+}
+
+bool buf_u64_comparer(void* v1, void* v2)
+{
+	return (*(uint64_t*)v1) == (*(uint64_t*)v2);
 }
 
 bool buf_float_comparer(void* v1, void* v2)
