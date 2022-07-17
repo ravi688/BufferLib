@@ -656,6 +656,9 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_get_ptr_at_typeof(buffer, type, index) ((type*)buf_getptr_at(buffer, index))
 #define buf_push_null(buffer) buf_push_char(buffer, 0)
 #define buf_push_newline(buffer) buf_push_char(buffer, '\n')
+#define buf_new(type) buf_create(sizeof(type), 0, 0)
+#define buf_push_auto(buffer, value) { __auto_type _value = value; buf_push(buffer, &_value); }
+#define buf_get_count(buffer) buf_get_element_count(buffer)
 
 #define buf_printf(...) define_alias_function_macro(buf_printf, __VA_ARGS__)
 #define buf_push_string(...) define_alias_function_macro(buf_push_string, __VA_ARGS__)
@@ -672,9 +675,11 @@ BUF_API bool buf_ptr_comparer(void*, void*);
 BUF_API bool buf_s8_comparer(void*, void*);
 BUF_API bool buf_s16_comparer(void*, void*);
 BUF_API bool buf_s32_comparer(void*, void*);
+BUF_API bool buf_s64_comparer(void*, void*);
 BUF_API bool buf_u8_comparer(void*, void*);
 BUF_API bool buf_u16_comparer(void*, void*);
 BUF_API bool buf_u32_comparer(void*, void*);
+BUF_API bool buf_u64_comparer(void*, void*);
 BUF_API bool buf_float_comparer(void*, void*);
 BUF_API bool buf_double_comparer(void*, void*);
 
