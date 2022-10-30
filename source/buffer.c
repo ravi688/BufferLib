@@ -601,6 +601,10 @@ function_signature(void, buf_clear, BUFFER* buffer, void* clear_value)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);		
+
+	if((buffer->free != NULL) && (buffer->element_count > 0))
+		buf_traverse_elements(buffer, 0, buf_get_element_count(buffer) - 1, (void (*)(void*, void*))(buffer->free), NULL);
+
 	if(clear_value == NULL)
 		memset(buffer->bytes , 0 , buffer->element_count * buffer->element_size) ; 
 	else
