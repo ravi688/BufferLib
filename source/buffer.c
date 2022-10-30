@@ -802,9 +802,21 @@ function_signature(void, buf_pop, BUFFER* buffer, void* out_value)
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
 	--(buffer->element_count);
 	if(out_value != NULL)
-		memcpy(out_value , buffer->bytes + buffer->element_count * buffer->element_size , buffer->element_size) ; 
+		memcpy(out_value , buffer->bytes + buffer->element_count * buffer->element_size , buffer->element_size);
+	else if(buffer->free != NULL)
+		buffer->free(buffer->bytes + buffer->element_count * buffer->element_size);
 	CALLTRACE_END();
 }
+
+function_signature_void(void*, BUFpop_get_ptr) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_pop_get_ptr(binded_buffer)); }
+function_signature(void*, buf_pop_get_ptr, BUFFER* buffer)
+{
+	CALLTRACE_BEGIN(); 
+	void* ptr = buf_peek_ptr(buffer); 
+	buf_pop_pseudo(buffer, 1); 
+	CALLTRACE_RETURN(ptr);
+}
+
 
 function_signature(buf_ucount_t, BUFfind_index_of, void* value, bool (*comparer)(void*, void*)) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_find_index_of(binded_buffer, value, comparer)); }
 function_signature(buf_ucount_t, buf_find_index_of, BUFFER* buffer, void* value, bool (*comparer)(void*, void*))
