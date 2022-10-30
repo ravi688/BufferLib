@@ -292,6 +292,10 @@ In version 1_6:
 		1. typedef BUFFER* pBUFFER
 		2. BUF_INVALID macro
 		3. added CallTrace submodule and  include<calltrace.h>
+		4. added BUFpop_get_ptr and buf_pop_get_ptr
+			These functions can be used for popping out the value from the top of the stack and getting a pointer to it.
+			NOTE: while the BUFpop and buf_pop call buffer->free for the element being popped out, but BUFpop_get_ptr and buf_pop_get_ptr
+						doesn't, you will need to manually handle it.
 */
 
 /*Future modifications:
@@ -444,6 +448,7 @@ BUF_API function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t elem
 BUF_API function_signature_void(void, BUFfit);
 BUF_API function_signature(void, BUFpeek, void* out_value);  
 BUF_API function_signature_void(void*, BUFpeek_ptr); 
+BUF_API function_signature_void(void*, BUFpop_get_ptr);
 BUF_API function_signature(void, BUFpop, void* out_value); 
 BUF_API function_signature(void, BUFpush, void* in_value); 
 BUF_API function_signature(void, BUFpushv, void* in_value, buf_ucount_t count); 
@@ -498,6 +503,7 @@ BUF_API function_signature(void, buf_fit, BUFFER* buffer);
 BUF_API function_signature(void, buf_peek, BUFFER* buffer, void* out_value);  
 BUF_API function_signature(void*, buf_peek_ptr, BUFFER* buffer); 
 BUF_API function_signature(void, buf_pop, BUFFER* buffer, void* out_value); 
+BUF_API function_signature(void*, buf_pop_get_ptr, BUFFER* buffer);
 BUF_API function_signature(void, buf_push, BUFFER* buffer, void* in_value); 
 BUF_API function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_ucount_t count); 
 BUF_API function_signature(bool, buf_remove, BUFFER* buffer, void* object, bool (*comparer)(void*, void*));
@@ -548,6 +554,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define BUFget_at(...) 											define_alias_function_macro(BUFget_at, __VA_ARGS__)
 #define BUFset_at(...) 											define_alias_function_macro(BUFset_at, __VA_ARGS__)
 #define BUFgetptr_at(...) 									define_alias_function_macro(BUFgetptr_at, __VA_ARGS__)
+#define BUFpop_get_ptr(...) 								define_alias_function_void_macro(BUFpop_get_ptr)
 #define BUFpop(...) 												define_alias_function_macro(BUFpop, __VA_ARGS__)
 #define BUFpush(...) 												define_alias_function_macro(BUFpush, __VA_ARGS__)
 #define BUFpushv(...) 											define_alias_function_macro(BUFpushv, __VA_ARGS__)
@@ -603,6 +610,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_get_at(...) 										define_alias_function_macro(buf_get_at, __VA_ARGS__)
 #define buf_set_at(...) 										define_alias_function_macro(buf_set_at, __VA_ARGS__)
 #define buf_getptr_at(...) 									define_alias_function_macro(buf_getptr_at, __VA_ARGS__)
+#define buf_pop_get_ptr(...)  							define_alias_function_macro(buf_pop_get_ptr, __VA_ARGS__)
 #define buf_pop(...) 												define_alias_function_macro(buf_pop, __VA_ARGS__)
 #define buf_push(...) 											define_alias_function_macro(buf_push, __VA_ARGS__)
 #define buf_pushv(...) 											define_alias_function_macro(buf_pushv, __VA_ARGS__)
