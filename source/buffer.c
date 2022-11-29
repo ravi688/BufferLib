@@ -55,6 +55,10 @@ function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
+	
+	if(count == 0) 
+		CALLTRACE_RETURN();
+
 	buf_ucount_t previous_element_count = buffer->element_count;
 	buffer->element_count += count; 
 	if(buffer->capacity <= 0)
@@ -85,6 +89,21 @@ function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count)
 	}
 	memset(buffer->bytes + previous_element_count * buffer->element_size , 0 , buffer->element_size * count); 
 	CALLTRACE_END();
+}
+
+function_signature(void*, BUFpush_pseudo_get, buf_ucount_t count) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_push_pseudo_get(binded_buffer, count)); }
+function_signature(void*, buf_push_pseudo_get, BUFFER* buffer, buf_ucount_t count)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+
+	if(count == 0)
+		CALLTRACE_RETURN(NULL);
+
+	buf_ucount_t offset = buf_get_element_count(buffer);
+	buf_push_pseudo(buffer, count);
+
+	CALLTRACE_RETURN(buf_get_ptr_at(buffer, offset));
 }
 
 function_signature(void, BUFpop_pseudo, buf_ucount_t count) { CALLTRACE_BEGIN(); buf_pop_pseudo(binded_buffer, count); CALLTRACE_END(); }
