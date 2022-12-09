@@ -822,7 +822,7 @@ function_signature(void, buf_pop, BUFFER* buffer, void* out_value)
 	--(buffer->element_count);
 	if(out_value != NULL)
 		memcpy(out_value , buffer->bytes + buffer->element_count * buffer->element_size , buffer->element_size);
-	else if(buffer->free != NULL)
+	if(buffer->free != NULL)
 		buffer->free(buffer->bytes + buffer->element_count * buffer->element_size);
 	CALLTRACE_END();
 }
@@ -878,15 +878,33 @@ function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_ucount_t
 	CALLTRACE_END(); 
 }
 
+function_signature(void, buf_vprintf, BUFFER* buffer, char* stage_buffer, const char* format_string, va_list args)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	if(stage_buffer != NULL)
+	{
+		vsprintf(stage_buffer, format_string, args);
+		buf_pushv(buffer, stage_buffer, strlen(stage_buffer));
+	}
+	else
+	{
+		buf_ucount_t offset = buf_get_element_count(buffer);
+		buf_push_pseudo(buffer, 512);
+		vsprintf(buf_get_ptr(buffer) + offset, format_string, args);
+		buf_set_element_count(buffer, offset + strlen(buf_get_ptr_at_typeof(buffer, char, offset)) + 1);
+	}
+	CALLTRACE_END();
+}
+
 function_signature(void, buf_printf, BUFFER* buffer, char* stage_buffer, const char* format_string, ...)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
 	va_list args;
 	va_start(args, format_string);
-	vsprintf(stage_buffer, format_string, args);
+	buf_vprintf(buffer, stage_buffer, format_string, args);
 	va_end(args);
-	buf_pushv(buffer, stage_buffer, strlen(stage_buffer));
 	CALLTRACE_END();
 }
 

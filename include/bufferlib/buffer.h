@@ -343,6 +343,7 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 #include <bufferlib/defines.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -677,9 +678,11 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_push_auto(buffer, value) { __auto_type _value = value; buf_push(buffer, &_value); }
 #define buf_get_count(buffer) buf_get_element_count(buffer)
 
+#define buf_vprintf(...) define_alias_function_macro(buf_vprintf, __VA_ARGS__)
 #define buf_printf(...) define_alias_function_macro(buf_printf, __VA_ARGS__)
 #define buf_push_string(...) define_alias_function_macro(buf_push_string, __VA_ARGS__)
 #define buf_push_char(...) define_alias_function_macro(buf_push_char, __VA_ARGS__)
+BUF_API function_signature(void, buf_vprintf, BUFFER* string_buffer, char* buffer, const char* format_string, va_list args);
 BUF_API function_signature(void, buf_printf, BUFFER* string_buffer, char* buffer, const char* format_string, ...);
 BUF_API function_signature(void, buf_push_string, BUFFER* string_buffer, const char* string);
 BUF_API function_signature(void, buf_push_char, BUFFER* buffer, char value);
