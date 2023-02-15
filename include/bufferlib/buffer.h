@@ -292,6 +292,15 @@ In version 1_6:
 		1. typedef BUFFER* pBUFFER
 		2. BUF_INVALID macro
 		3. added CallTrace submodule and  include<calltrace.h>
+		4. added BUFpop_get_ptr and buf_pop_get_ptr
+			These functions can be used for popping out the value from the top of the stack and getting a pointer to it.
+			NOTE: while the BUFpop and buf_pop call buffer->free for the element being popped out, but BUFpop_get_ptr and buf_pop_get_ptr
+						doesn't, you will need to manually handle it.
+		5. Added BUFpush_pseudo_get and buf_push_pseudo_get; returns NULL if the size is zero (nothing to be pushed)
+			The implementation is as follows
+				buf_ucount_t offset = buf_get_element_count(buffer);
+				buf_push_pseudo(buffer, size);
+				return buf_get_ptr_at(buffer, offset)
 */
 
 /*Future modifications:
@@ -334,6 +343,7 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 #include <bufferlib/defines.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -444,6 +454,7 @@ BUF_API function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t elem
 BUF_API function_signature_void(void, BUFfit);
 BUF_API function_signature(void, BUFpeek, void* out_value);  
 BUF_API function_signature_void(void*, BUFpeek_ptr); 
+BUF_API function_signature_void(void*, BUFpop_get_ptr);
 BUF_API function_signature(void, BUFpop, void* out_value); 
 BUF_API function_signature(void, BUFpush, void* in_value); 
 BUF_API function_signature(void, BUFpushv, void* in_value, buf_ucount_t count); 
@@ -482,6 +493,7 @@ BUF_API function_signature_void(BUFFER*, BUFget_binded_buffer);
 BUF_API function_signature_void(BUFFER*, BUFget_clone);
 BUF_API function_signature_void(buf_ucount_t, BUFget_buffer_size);
 BUF_API function_signature(void, BUFpush_pseudo, buf_ucount_t count);
+BUF_API function_signature(void*, BUFpush_pseudo_get, buf_ucount_t count);
 BUF_API function_signature(void, BUFpop_pseudo, buf_ucount_t count);
 BUF_API function_signature(void, BUFinsert_pseudo, buf_ucount_t index, buf_ucount_t count);
 BUF_API function_signature(void, BUFremove_pseudo, buf_ucount_t index, buf_ucount_t count);
@@ -498,6 +510,7 @@ BUF_API function_signature(void, buf_fit, BUFFER* buffer);
 BUF_API function_signature(void, buf_peek, BUFFER* buffer, void* out_value);  
 BUF_API function_signature(void*, buf_peek_ptr, BUFFER* buffer); 
 BUF_API function_signature(void, buf_pop, BUFFER* buffer, void* out_value); 
+BUF_API function_signature(void*, buf_pop_get_ptr, BUFFER* buffer);
 BUF_API function_signature(void, buf_push, BUFFER* buffer, void* in_value); 
 BUF_API function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_ucount_t count); 
 BUF_API function_signature(bool, buf_remove, BUFFER* buffer, void* object, bool (*comparer)(void*, void*));
@@ -534,6 +547,7 @@ BUF_API function_signature(buf_ucount_t, buf_get_element_size, BUFFER* buffer);
 BUF_API function_signature(BUFFER, buf_get_clone, BUFFER* buffer);
 BUF_API function_signature(buf_ucount_t, buf_get_buffer_size, BUFFER* buffer);
 BUF_API function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count);
+BUF_API function_signature(void*, buf_push_pseudo_get, BUFFER* buffer, buf_ucount_t count);
 BUF_API function_signature(void, buf_pop_pseudo, BUFFER* buffer, buf_ucount_t count);
 BUF_API function_signature(void, buf_insert_pseudo, BUFFER* buffer, buf_ucount_t index, buf_ucount_t count);
 BUF_API function_signature(void, buf_remove_pseudo, BUFFER* buffer, buf_ucount_t index, buf_ucount_t count);
@@ -548,6 +562,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define BUFget_at(...) 											define_alias_function_macro(BUFget_at, __VA_ARGS__)
 #define BUFset_at(...) 											define_alias_function_macro(BUFset_at, __VA_ARGS__)
 #define BUFgetptr_at(...) 									define_alias_function_macro(BUFgetptr_at, __VA_ARGS__)
+#define BUFpop_get_ptr(...) 								define_alias_function_void_macro(BUFpop_get_ptr)
 #define BUFpop(...) 												define_alias_function_macro(BUFpop, __VA_ARGS__)
 #define BUFpush(...) 												define_alias_function_macro(BUFpush, __VA_ARGS__)
 #define BUFpushv(...) 											define_alias_function_macro(BUFpushv, __VA_ARGS__)
@@ -591,6 +606,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define BUFget_offset() 										define_alias_function_void_macro(BUFget_offset)
 #define BUFis_auto_managed()  							define_alias_function_void_macro(BUFis_auto_managed)
 #define BUFpush_pseudo(...) 								define_alias_function_macro(BUFpush_pseudo, __VA_ARGS__)
+#define BUFpush_pseudo_get(...)  						define_alias_function_macro(BUFpush_pseudo_get, __VA_ARGS__)
 #define BUFpop_pseudo(...) 									define_alias_function_macro(BUFpop_pseudo, __VA_ARGS__)
 #define BUFinsert_pseudo(...) 							define_alias_function_macro(BUFinsert_pseudo, __VA_ARGS__)
 #define BUFremove_pseudo(...) 							define_alias_function_macro(BUFremove_pseudo, __VA_ARGS__)
@@ -603,6 +619,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_get_at(...) 										define_alias_function_macro(buf_get_at, __VA_ARGS__)
 #define buf_set_at(...) 										define_alias_function_macro(buf_set_at, __VA_ARGS__)
 #define buf_getptr_at(...) 									define_alias_function_macro(buf_getptr_at, __VA_ARGS__)
+#define buf_pop_get_ptr(...)  							define_alias_function_macro(buf_pop_get_ptr, __VA_ARGS__)
 #define buf_pop(...) 												define_alias_function_macro(buf_pop, __VA_ARGS__)
 #define buf_push(...) 											define_alias_function_macro(buf_push, __VA_ARGS__)
 #define buf_pushv(...) 											define_alias_function_macro(buf_pushv, __VA_ARGS__)
@@ -644,6 +661,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_get_offset(...) 								define_alias_function_macro(buf_get_offset, __VA_ARGS__)
 #define buf_is_auto_managed(...)  					define_alias_function_macro(buf_is_auto_managed, __VA_ARGS__)
 #define buf_push_pseudo(...) 								define_alias_function_macro(buf_push_pseudo, __VA_ARGS__)
+#define buf_push_pseudo_get(...) 						define_alias_function_macro(buf_push_pseudo_get, __VA_ARGS__)
 #define buf_pop_pseudo(...) 								define_alias_function_macro(buf_pop_pseudo, __VA_ARGS__)
 #define buf_insert_pseudo(...) 							define_alias_function_macro(buf_insert_pseudo, __VA_ARGS__)
 #define buf_remove_pseudo(...) 							define_alias_function_macro(buf_remove_pseudo, __VA_ARGS__)
@@ -660,9 +678,11 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_push_auto(buffer, value) { __auto_type _value = value; buf_push(buffer, &_value); }
 #define buf_get_count(buffer) buf_get_element_count(buffer)
 
+#define buf_vprintf(...) define_alias_function_macro(buf_vprintf, __VA_ARGS__)
 #define buf_printf(...) define_alias_function_macro(buf_printf, __VA_ARGS__)
 #define buf_push_string(...) define_alias_function_macro(buf_push_string, __VA_ARGS__)
 #define buf_push_char(...) define_alias_function_macro(buf_push_char, __VA_ARGS__)
+BUF_API function_signature(void, buf_vprintf, BUFFER* string_buffer, char* buffer, const char* format_string, va_list args);
 BUF_API function_signature(void, buf_printf, BUFFER* string_buffer, char* buffer, const char* format_string, ...);
 BUF_API function_signature(void, buf_push_string, BUFFER* string_buffer, const char* string);
 BUF_API function_signature(void, buf_push_char, BUFFER* buffer, char value);

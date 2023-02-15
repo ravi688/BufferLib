@@ -55,6 +55,10 @@ function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
+	
+	if(count == 0) 
+		CALLTRACE_RETURN();
+
 	buf_ucount_t previous_element_count = buffer->element_count;
 	buffer->element_count += count; 
 	if(buffer->capacity <= 0)
@@ -85,6 +89,21 @@ function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count)
 	}
 	memset(buffer->bytes + previous_element_count * buffer->element_size , 0 , buffer->element_size * count); 
 	CALLTRACE_END();
+}
+
+function_signature(void*, BUFpush_pseudo_get, buf_ucount_t count) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_push_pseudo_get(binded_buffer, count)); }
+function_signature(void*, buf_push_pseudo_get, BUFFER* buffer, buf_ucount_t count)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+
+	if(count == 0)
+		CALLTRACE_RETURN(NULL);
+
+	buf_ucount_t offset = buf_get_element_count(buffer);
+	buf_push_pseudo(buffer, count);
+
+	CALLTRACE_RETURN(buf_get_ptr_at(buffer, offset));
 }
 
 function_signature(void, BUFpop_pseudo, buf_ucount_t count) { CALLTRACE_BEGIN(); buf_pop_pseudo(binded_buffer, count); CALLTRACE_END(); }
@@ -469,8 +488,13 @@ function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size
 		buffer->on_post_resize = NULL;
 		buffer->free = NULL;
 	}
-	buffer->bytes = (void*)malloc(element_size * capacity + offset); 
-	GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
+	if((capacity > 0) || (offset > 0))
+	{
+		buffer->bytes = (void*)malloc(element_size * capacity + offset); 
+		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
+	}
+	else
+		buffer->bytes = NULL;
 	buffer->element_size = element_size; 
 	buffer->capacity = capacity;
 	buffer->element_count = 0;
@@ -601,6 +625,10 @@ function_signature(void, buf_clear, BUFFER* buffer, void* clear_value)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);		
+
+	if((buffer->free != NULL) && (buffer->element_count > 0))
+		buf_traverse_elements(buffer, 0, buf_get_element_count(buffer) - 1, (void (*)(void*, void*))(buffer->free), NULL);
+
 	if(clear_value == NULL)
 		memset(buffer->bytes , 0 , buffer->element_count * buffer->element_size) ; 
 	else
@@ -798,9 +826,21 @@ function_signature(void, buf_pop, BUFFER* buffer, void* out_value)
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
 	--(buffer->element_count);
 	if(out_value != NULL)
-		memcpy(out_value , buffer->bytes + buffer->element_count * buffer->element_size , buffer->element_size) ; 
+		memcpy(out_value , buffer->bytes + buffer->element_count * buffer->element_size , buffer->element_size);
+	if(buffer->free != NULL)
+		buffer->free(buffer->bytes + buffer->element_count * buffer->element_size);
 	CALLTRACE_END();
 }
+
+function_signature_void(void*, BUFpop_get_ptr) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_pop_get_ptr(binded_buffer)); }
+function_signature(void*, buf_pop_get_ptr, BUFFER* buffer)
+{
+	CALLTRACE_BEGIN(); 
+	void* ptr = buf_peek_ptr(buffer); 
+	buf_pop_pseudo(buffer, 1); 
+	CALLTRACE_RETURN(ptr);
+}
+
 
 function_signature(buf_ucount_t, BUFfind_index_of, void* value, bool (*comparer)(void*, void*)) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_find_index_of(binded_buffer, value, comparer)); }
 function_signature(buf_ucount_t, buf_find_index_of, BUFFER* buffer, void* value, bool (*comparer)(void*, void*))
@@ -843,15 +883,33 @@ function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_ucount_t
 	CALLTRACE_END(); 
 }
 
+function_signature(void, buf_vprintf, BUFFER* buffer, char* stage_buffer, const char* format_string, va_list args)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	if(stage_buffer != NULL)
+	{
+		vsprintf(stage_buffer, format_string, args);
+		buf_pushv(buffer, stage_buffer, strlen(stage_buffer));
+	}
+	else
+	{
+		buf_ucount_t offset = buf_get_element_count(buffer);
+		buf_push_pseudo(buffer, 512);
+		vsprintf(buf_get_ptr(buffer) + offset, format_string, args);
+		buf_set_element_count(buffer, offset + strlen(buf_get_ptr_at_typeof(buffer, char, offset)) + 1);
+	}
+	CALLTRACE_END();
+}
+
 function_signature(void, buf_printf, BUFFER* buffer, char* stage_buffer, const char* format_string, ...)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
 	va_list args;
 	va_start(args, format_string);
-	vsprintf(stage_buffer, format_string, args);
+	buf_vprintf(buffer, stage_buffer, format_string, args);
 	va_end(args);
-	buf_pushv(buffer, stage_buffer, strlen(stage_buffer));
 	CALLTRACE_END();
 }
 
