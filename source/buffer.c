@@ -488,8 +488,13 @@ function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size
 		buffer->on_post_resize = NULL;
 		buffer->free = NULL;
 	}
-	buffer->bytes = (void*)malloc(element_size * capacity + offset); 
-	GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
+	if((capacity > 0) || (offset > 0))
+	{
+		buffer->bytes = (void*)malloc(element_size * capacity + offset); 
+		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
+	}
+	else
+		buffer->bytes = NULL;
 	buffer->element_size = element_size; 
 	buffer->capacity = capacity;
 	buffer->element_count = 0;
