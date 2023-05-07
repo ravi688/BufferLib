@@ -929,6 +929,41 @@ function_signature(void, buf_push_char, BUFFER* buffer, char value)
 	CALLTRACE_END();
 }
 
+static buf_ucount_t get_selection_index(void* values, u32 stride, buf_ucount_t count, buf_comparer_t compare, void* user_data)
+{
+	buf_ucount_t index = 0;
+	void* value = values;
+	for(u32 i = 1; i < count; i++)
+	{
+		void* cursor = values + stride * i;
+		if(compare(cursor, value, user_data))
+		{
+			value = cursor;
+			index = i;
+		}
+	}
+	return index;
+}
+
+BUF_API function_signature(void, buf_sort, BUFFER* buffer, buf_comparer_t compare, void* user_data)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	buf_ucount_t count = buf_get_element_count(buffer);
+	uint32_t stride = buf_get_element_size(buffer);
+	void* ptr = buf_get_ptr(buffer);
+	uint8_t swap_buffer[stride];
+	for(buf_ucount_t i = 0; i < count; i++)
+	{
+		void* v1 = ptr + stride * i;
+		void* v2 = v1 + stride * get_selection_index(v1, stride, count - i, compare, user_data);
+		memcpy(swap_buffer, v1, stride);
+		memcpy(v1, v2, stride);
+		memcpy(v2, swap_buffer, stride);
+	}
+	CALLTRACE_END();
+}
+
 bool buf_string_comparer(void* v1, void* v2)
 {
 	return strcmp(*(char**)v1, *(char**)v2) == 0;
@@ -989,6 +1024,188 @@ bool buf_double_comparer(void* v1, void* v2)
 	return (*(double*)v1) == (*(double*)v2);
 }
 
+
+BUF_API bool buf_string_greater_than(void* v1, void* v2, void* user_data)
+{
+	return strlen(*((const char* const*)v1)) > strlen(*((const char* const*)v2));
+}
+
+BUF_API bool buf_ptr_greater_than(void* v1, void* v2, void* user_data)
+{
+	return *(char* const*)v1 > *(char* const*)v2;
+}
+
+BUF_API bool buf_s8_greater_than(void* v1, void* v2, void* user_data)
+{
+	return *(const int8_t*)v1 > *(const int8_t*)v2;
+}
+
+BUF_API bool buf_s16_greater_than(void* v1, void* v2, void* user_data)
+{
+	return *(const int16_t*)v1 > *(const int16_t*)v2;
+}
+
+BUF_API bool buf_s32_greater_than(void* v1, void* v2, void* user_data)
+{
+	return *(const int32_t*)v1 > *(const int32_t*)v2;
+}
+
+BUF_API bool buf_s64_greater_than(void* v1, void* v2, void* user_data)
+{
+	return *(const int64_t*)v1 > *(const int64_t*)v2;
+}
+
+BUF_API bool buf_u8_greater_than(void* v1, void* v2, void* user_data)
+{
+	return *(const uint8_t*)v1 > *(const uint8_t*)v2;
+}
+
+BUF_API bool buf_u16_greater_than(void* v1, void* v2, void* user_data)
+{
+	return *(const uint16_t*)v1 > *(const uint16_t*)v2;
+}
+
+BUF_API bool buf_u32_greater_than(void* v1, void* v2, void* user_data)
+{
+	return *(const uint32_t*)v1 > *(const uint32_t*)v2;
+}
+
+BUF_API bool buf_u64_greater_than(void* v1, void* v2, void* user_data)
+{
+	return *(const uint64_t*)v1 > *(const uint64_t*)v2;
+}
+
+BUF_API bool buf_float_greater_than(void* v1, void* v2, void* user_data)
+{
+	return *(const float*)v1 > *(const float*)v2;
+}
+
+BUF_API bool buf_double_greater_than(void* v1, void* v2, void* user_data)
+{
+	return *(const double*)v1 > *(const double*)v2;
+}
+
+
+BUF_API bool buf_string_less_than(void* v1, void* v2, void* user_data)
+{
+	return strlen(*((const char* const*)v1)) < strlen(*((const char* const*)v2));
+}
+
+BUF_API bool buf_ptr_less_than(void* v1, void* v2, void* user_data)
+{
+	return *(char* const*)v1 < *(char* const*)v2;
+}
+
+BUF_API bool buf_s8_less_than(void* v1, void* v2, void* user_data)
+{
+	return *(const int8_t*)v1 < *(const int8_t*)v2;
+}
+
+BUF_API bool buf_s16_less_than(void* v1, void* v2, void* user_data)
+{
+	return *(const int16_t*)v1 < *(const int16_t*)v2;
+}
+
+BUF_API bool buf_s32_less_than(void* v1, void* v2, void* user_data)
+{
+	return *(const int32_t*)v1 < *(const int32_t*)v2;
+}
+
+BUF_API bool buf_s64_less_than(void* v1, void* v2, void* user_data)
+{
+	return *(const int64_t*)v1 < *(const int64_t*)v2;
+}
+
+BUF_API bool buf_u8_less_than(void* v1, void* v2, void* user_data)
+{
+	return *(const uint8_t*)v1 < *(const uint8_t*)v2;
+}
+
+BUF_API bool buf_u16_less_than(void* v1, void* v2, void* user_data)
+{
+	return *(const uint16_t*)v1 < *(const uint16_t*)v2;
+}
+
+BUF_API bool buf_u32_less_than(void* v1, void* v2, void* user_data)
+{
+	return *(const uint32_t*)v1 < *(const uint32_t*)v2;
+}
+
+BUF_API bool buf_u64_less_than(void* v1, void* v2, void* user_data)
+{
+	return *(const uint64_t*)v1 < *(const uint64_t*)v2;
+}
+
+BUF_API bool buf_float_less_than(void* v1, void* v2, void* user_data)
+{
+	return *(const float*)v1 < *(const float*)v2;
+}
+
+BUF_API bool buf_double_less_than(void* v1, void* v2, void* user_data)
+{
+	return *(const double*)v1 < *(const double*)v2;
+}
+
+
+BUF_API void buf_string_print(void* value, void* user_data)
+{
+	printf("%s ", *((const char* const*)value));
+}
+
+BUF_API void buf_ptr_print(void* value, void* user_data)
+{
+	printf("%p ", *(char* const*)value);
+}
+
+BUF_API void buf_s8_print(void* value, void* user_data)
+{
+	printf("%d ", *(const int8_t*)value);
+}
+
+BUF_API void buf_s16_print(void* value, void* user_data)
+{
+	printf("%d ", *(const int16_t*)value);
+}
+
+BUF_API void buf_s32_print(void* value, void* user_data)
+{
+	printf("%d ", *(const int32_t*)value);
+}
+
+BUF_API void buf_s64_print(void* value, void* user_data)
+{
+	printf("%d ", *(const int64_t*)value);
+}
+
+BUF_API void buf_u8_print(void* value, void* user_data)
+{
+	printf("%u ", *(const uint8_t*)value);
+}
+
+BUF_API void buf_u16_print(void* value, void* user_data)
+{
+	printf("%u ", *(const uint16_t*)value);
+}
+
+BUF_API void buf_u32_print(void* value, void* user_data)
+{
+	printf("%lu ", *(const uint32_t*)value);
+}
+
+BUF_API void buf_u64_print(void* value, void* user_data)
+{
+	printf("%lu ", *(const uint64_t*)value);
+}
+
+BUF_API void buf_float_print(void* value, void* user_data)
+{
+	printf("%f ", *(const float*)value);
+}
+
+BUF_API void buf_double_print(void* value, void* user_data)
+{
+	printf("%f ", *(const double*)value);
+}
 
 
 #ifdef BUF_DEBUG
