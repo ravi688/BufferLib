@@ -687,6 +687,9 @@ BUF_API function_signature(void, buf_printf, BUFFER* string_buffer, char* buffer
 BUF_API function_signature(void, buf_push_string, BUFFER* string_buffer, const char* string);
 BUF_API function_signature(void, buf_push_char, BUFFER* buffer, char value);
 
+typedef bool (*buf_comparer_t)(void* lhs, void* rhs, void* user_data);
+#define buf_sort(...) define_alias_function_macro(buf_sort, __VA_ARGS__)
+BUF_API function_signature(void, buf_sort, BUFFER* buffer, buf_comparer_t compare, void* user_data);
 
 #define buf_char_comparer buf_s8_comparer
 #define buf_int_comparer buf_s32_comparer
@@ -702,6 +705,58 @@ BUF_API bool buf_u32_comparer(void*, void*);
 BUF_API bool buf_u64_comparer(void*, void*);
 BUF_API bool buf_float_comparer(void*, void*);
 BUF_API bool buf_double_comparer(void*, void*);
+
+#define buf_string_equal_to(lhs, rhs) buf_string_comparer(lhs, rhs)
+#define buf_ptr_equal_to(lhs, rhs) buf_ptr_comparer(lhs, rhs)
+#define buf_s8_equal_to(lhs, rhs) buf_s8_comparer(lhs, rhs)
+#define buf_s16_equal_to(lhs, rhs) buf_s16_comparer(lhs, rhs)
+#define buf_s32_equal_to(lhs, rhs) buf_s32_comparer(lhs, rhs)
+#define buf_s64_equal_to(lhs, rhs) buf_s64_comparer(lhs, rhs)
+#define buf_u8_equal_to(lhs, rhs) buf_u8_comparer(lhs, rhs)
+#define buf_u16_equal_to(lhs, rhs) buf_u16_comparer(lhs, rhs)
+#define buf_u32_equal_to(lhs, rhs) buf_u32_comparer(lhs, rhs)
+#define buf_u64_equal_to(lhs, rhs) buf_u64_comparer(lhs, rhs)
+#define buf_float_equal_to(lhs, rhs) buf_float_comparer(lhs, rhs)
+#define buf_double_equal_to(lhs, rhs) buf_double_comparer(lhs, rhs)
+
+BUF_API bool buf_string_greater_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_ptr_greater_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_s8_greater_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_s16_greater_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_s32_greater_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_s64_greater_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_u8_greater_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_u16_greater_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_u32_greater_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_u64_greater_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_float_greater_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_double_greater_than(void* lhs, void* rhs, void* user_data);
+
+BUF_API bool buf_string_less_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_ptr_less_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_s8_less_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_s16_less_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_s32_less_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_s64_less_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_u8_less_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_u16_less_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_u32_less_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_u64_less_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_float_less_than(void* lhs, void* rhs, void* user_data);
+BUF_API bool buf_double_less_than(void* lhs, void* rhs, void* user_data);
+
+BUF_API void buf_string_print(void* value, void* user_data);
+BUF_API void buf_ptr_print(void* value, void* user_data);
+BUF_API void buf_s8_print(void* value, void* user_data);
+BUF_API void buf_s16_print(void* value, void* user_data);
+BUF_API void buf_s32_print(void* value, void* user_data);
+BUF_API void buf_s64_print(void* value, void* user_data);
+BUF_API void buf_u8_print(void* value, void* user_data);
+BUF_API void buf_u16_print(void* value, void* user_data);
+BUF_API void buf_u32_print(void* value, void* user_data);
+BUF_API void buf_u64_print(void* value, void* user_data);
+BUF_API void buf_float_print(void* value, void* user_data);
+BUF_API void buf_double_print(void* value, void* user_data);
 
 #ifdef __cplusplus
 }
