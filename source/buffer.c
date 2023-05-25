@@ -467,6 +467,7 @@ function_signature(BUFFER*, BUFcreate_object, void* bytes)
 	buffer->on_post_resize = NULL;
 	buffer->offset = 0;
 	buffer->free = NULL;
+	buffer->is_ptr_queried = false;
 	CALLTRACE_RETURN(buffer);
 }
 
@@ -487,6 +488,7 @@ function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size
 		buffer->on_pre_resize = NULL; 
 		buffer->on_post_resize = NULL;
 		buffer->free = NULL;
+		buffer->is_ptr_queried = false;
 	}
 	if((capacity > 0) || (offset > 0))
 	{
@@ -512,12 +514,21 @@ function_signature(void, buf_get_at, BUFFER* buffer, buf_ucount_t index, void* o
 	CALLTRACE_END();
 }
 
+#if defined(BUF_DEBUG) && defined(BUF_ENABLE_BUFFER_RESIZE_WARNING)
+#	define PTR_QUERIED(buffer) (buffer)->is_ptr_queried = true
+#	define WARN_IF_PTR_QUERIED(buffer) if((buffer)->is_ptr_queried) { (buffer)->is_ptr_queried = false; log_wrn("Bufferlib: buffer has been resized since a pointer into the buffer was queried!\n"); }
+#else
+#	define PTR_QUERIED(buffer)
+#	define WARN_IF_PTR_QUERIED(buffer)
+#endif
+
 function_signature(void*, BUFgetptr_at, buf_ucount_t index) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_getptr_at(binded_buffer, index)); }
 function_signature(void*, buf_getptr_at, BUFFER* buffer, buf_ucount_t index)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);			
 	GOOD_ASSERT(index < buffer->element_count,"index >= buffer->element_count, Index Out of Range Exception");
+	PTR_QUERIED(buffer);
 	CALLTRACE_RETURN(buffer->bytes + index * buffer->element_size); 
 }
 
@@ -537,6 +548,7 @@ function_signature(void*, buf_get_offset_bytes, BUFFER* buffer)
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);	
 	GOOD_ASSERT(buffer->offset != 0, "buffer->offset equals to Zero!");
+	PTR_QUERIED(buffer);
 	CALLTRACE_RETURN(buffer->bytes + buffer->capacity * buffer->element_size);
 }
 
@@ -596,6 +608,7 @@ function_signature(void, buf_resize, BUFFER* buffer, buf_ucount_t new_capacity)
 	if((new_buffer_size < buffer_size) && (buffer->element_count >= buffer->capacity))
 		buffer->element_count = new_capacity;
 	buffer->capacity = new_capacity;
+	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
 }
 
@@ -694,6 +707,7 @@ function_signature(void, buf_insert_at, BUFFER* buffer, buf_ucount_t index , voi
 	// copy in_value to the inserted block
 	memcpy(buffer->bytes + index * buffer->element_size, in_value, buffer->element_size);
 	
+	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
 }
 
@@ -796,6 +810,7 @@ function_signature(void, buf_fit, BUFFER* buffer)
 	buffer->bytes =  realloc(buffer->bytes , buffer->element_count * buffer->element_size); 
 	GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
 	buffer->capacity = buffer->element_count;
+	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
 }
 
@@ -805,6 +820,7 @@ function_signature(void*, buf_peek_ptr, BUFFER* buffer)
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);	
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!"); 
+	PTR_QUERIED(buffer);
 	CALLTRACE_RETURN(buffer->bytes + (buffer->element_count - 1) * buffer->element_size);
 }
 
@@ -838,6 +854,7 @@ function_signature(void*, buf_pop_get_ptr, BUFFER* buffer)
 	CALLTRACE_BEGIN(); 
 	void* ptr = buf_peek_ptr(buffer); 
 	buf_pop_pseudo(buffer, 1); 
+	PTR_QUERIED(buffer);
 	CALLTRACE_RETURN(ptr);
 }
 
@@ -865,6 +882,7 @@ function_signature(void, buf_push, BUFFER* buffer, void* in_value)
 		new_capacity *= 2;
 	buf_resize(buffer, new_capacity);
 	buf_set_at(buffer, buffer->element_count - 1, in_value);
+	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
 }
 
@@ -880,6 +898,7 @@ function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_ucount_t
 	buf_resize(buffer, new_capacity);
 	for(buf_ucount_t i = 0; i < count; i++, in_value += buffer->element_size)
 		buf_set_at(buffer, buffer->element_count - count + i, in_value);
+	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END(); 
 }
 
@@ -899,6 +918,7 @@ function_signature(void, buf_vprintf, BUFFER* buffer, char* stage_buffer, const 
 		vsprintf(buf_get_ptr(buffer) + offset, format_string, args);
 		buf_set_element_count(buffer, offset + strlen(buf_get_ptr_at_typeof(buffer, char, offset)) + 1);
 	}
+	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
 }
 
@@ -910,6 +930,7 @@ function_signature(void, buf_printf, BUFFER* buffer, char* stage_buffer, const c
 	va_start(args, format_string);
 	buf_vprintf(buffer, stage_buffer, format_string, args);
 	va_end(args);
+	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
 }
 
@@ -918,6 +939,7 @@ function_signature(void, buf_push_string, BUFFER* buffer, const char* string)
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
 	buf_pushv(buffer, (char*)string, strlen(string));	
+	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
 }
 
@@ -926,6 +948,7 @@ function_signature(void, buf_push_char, BUFFER* buffer, char value)
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
 	buf_push(buffer, &value);
+	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
 }
 
@@ -962,6 +985,13 @@ BUF_API function_signature(void, buf_sort, BUFFER* buffer, buf_comparer_t compar
 		memcpy(v2, swap_buffer, stride);
 	}
 	CALLTRACE_END();
+}
+
+BUF_API function_signature(void*, buf_create_element, BUFFER* buffer)
+{
+	CALLTRACE_BEGIN();
+	buf_push_pseudo(buffer, 1);
+	CALLTRACE_RETURN(buf_peek_ptr(buffer));
 }
 
 bool buf_string_comparer(void* v1, void* v2)

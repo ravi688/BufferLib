@@ -353,6 +353,7 @@ extern "C" {
 /*********************************************************************/
 #define UCOUNT_TYPE uint64_t
 #define COUNT_TYPE int64_t 
+// #define BUF_ENABLE_BUFFER_RESIZE_WARNING
 /*********************************************************************/
 
 typedef UCOUNT_TYPE buf_ucount_t;
@@ -438,6 +439,10 @@ typedef struct BUFFER
 	void (*on_pre_resize)(void);
 	void (*free)(void*);					//TODO: add a version number to this added
 	bool is_auto_managed; 
+	#ifdef BUF_DEBUG
+	/* true after calling buf_*_ptr_*() set of functions, it is used to warn about pointer being invalidated after buffer resize */
+	bool is_ptr_queried;
+	#endif  /* BUF_DEBUG */
 } BUFFER;
 
 typedef BUFFER* pBUFFER;
@@ -690,6 +695,9 @@ BUF_API function_signature(void, buf_push_char, BUFFER* buffer, char value);
 typedef bool (*buf_comparer_t)(void* lhs, void* rhs, void* user_data);
 #define buf_sort(...) define_alias_function_macro(buf_sort, __VA_ARGS__)
 BUF_API function_signature(void, buf_sort, BUFFER* buffer, buf_comparer_t compare, void* user_data);
+
+#define buf_create_element(...) define_alias_function_macro(buf_create_element, __VA_ARGS__)
+BUF_API function_signature(void*, buf_create_element, BUFFER* buffer);
 
 #define buf_char_comparer buf_s8_comparer
 #define buf_int_comparer buf_s32_comparer
