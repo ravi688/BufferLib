@@ -445,6 +445,7 @@ typedef struct BUFFER
 	#endif  /* BUF_DEBUG */
 } BUFFER;
 
+typedef BUFFER buffer_t;
 typedef BUFFER* pBUFFER;
 #define BUF_INVALID NULL
 
