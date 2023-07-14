@@ -696,6 +696,8 @@ BUF_API function_signature(void, buf_push_char, BUFFER* buffer, char value);
 typedef bool (*buf_comparer_t)(void* lhs, void* rhs, void* user_data);
 #define buf_sort(...) define_alias_function_macro(buf_sort, __VA_ARGS__)
 BUF_API function_signature(void, buf_sort, BUFFER* buffer, buf_comparer_t compare, void* user_data);
+#define buf_push_sort(...) define_alias_function_macro(buf_push_sort, __VA_ARGS__)
+BUF_API function_signature(void, buf_push_sort, BUFFER* buffer, void* value, buf_comparer_t compare, void* user_data);
 
 #define buf_create_element(...) define_alias_function_macro(buf_create_element, __VA_ARGS__)
 BUF_API function_signature(void*, buf_create_element, BUFFER* buffer);

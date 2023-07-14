@@ -968,6 +968,15 @@ static buf_ucount_t get_selection_index(void* values, u32 stride, buf_ucount_t c
 	return index;
 }
 
+static void swap(void* ptr1, void* ptr2, u32 size, void* swap_buffer)
+{
+	if(swap_buffer == NULL)
+		swap_buffer = alloca(size);
+	memcpy(swap_buffer, ptr1, size);
+	memcpy(ptr1, ptr2, size);
+	memcpy(ptr2, swap_buffer, size);
+}
+
 BUF_API function_signature(void, buf_sort, BUFFER* buffer, buf_comparer_t compare, void* user_data)
 {
 	CALLTRACE_BEGIN();
@@ -979,11 +988,25 @@ BUF_API function_signature(void, buf_sort, BUFFER* buffer, buf_comparer_t compar
 	for(buf_ucount_t i = 0; i < count; i++)
 	{
 		void* v1 = ptr + stride * i;
-		void* v2 = v1 + stride * get_selection_index(v1, stride, count - i, compare, user_data);
-		memcpy(swap_buffer, v1, stride);
-		memcpy(v1, v2, stride);
-		memcpy(v2, swap_buffer, stride);
+		swap(v1, v1 + stride * get_selection_index(v1, stride, count - i, compare, user_data), stride, swap_buffer);
 	}
+	CALLTRACE_END();
+}
+
+BUF_API function_signature(void, buf_push_sort, BUFFER* buffer, void* value, buf_comparer_t compare, void* user_data)
+{
+	CALLTRACE_BEGIN();
+	uint32_t stride = buf_get_element_size(buffer);
+	void* ptr = buf_get_ptr(buffer);
+	buf_ucount_t i = buf_get_element_count(buffer);
+	while(i > 0)
+	{
+		void* cursor = ptr + (i - 1) * stride;
+		if(compare(cursor, value, user_data))
+			break;
+		--i;
+	}
+	buf_insert_at(buffer, i, value);
 	CALLTRACE_END();
 }
 
