@@ -30,7 +30,7 @@ function_signature_void(static bool, BUFis_heap_allocated);
 #define BUFis_stack_allocated() define_alias_function_void_macro(BUFis_stack_allocated)
 #define BUFis_heap_allocated() define_alias_function_void_macro(BUFis_heap_allocated)
 
-function_signature_void(uint64_t, BUFget_buffer_object_size) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(sizeof(BUFFER)); } 
+function_signature_void(uint64_t, BUFget_buffer_object_size) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(sizeof(BUFFER)); }
 
 function_signature(void, BUFset_on_post_resize, void (*on_post_resize)(void)) { CALLTRACE_BEGIN(); buf_set_on_post_resize(binded_buffer, on_post_resize); CALLTRACE_END(); }
 function_signature(void, buf_set_on_post_resize, BUFFER* buffer, void (*on_post_resize)(void))
@@ -55,12 +55,12 @@ function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	
-	if(count == 0) 
+
+	if(count == 0)
 		CALLTRACE_RETURN();
 
 	buf_ucount_t previous_element_count = buffer->element_count;
-	buffer->element_count += count; 
+	buffer->element_count += count;
 	if(buffer->capacity <= 0)
 	{
 		buffer->capacity = 1;
@@ -71,23 +71,23 @@ function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count)
 
 	while(buffer->capacity < buffer->element_count)
 		buffer->capacity *= 2;
-	if(previous_capacity != buffer->capacity)
+	if(buffer->capacity > previous_capacity)
 	{
 		if(buffer->on_pre_resize != NULL)
 		{
-			buf_ucount_t temp = previous_capacity; 
-			previous_capacity = buffer->capacity; 
+			buf_ucount_t temp = previous_capacity;
+			previous_capacity = buffer->capacity;
 			buffer->capacity = temp;
 		 	(buffer->on_pre_resize)();
 		 	temp = previous_capacity;
-		 	previous_capacity = buffer->capacity; 
+		 	previous_capacity = buffer->capacity;
 			buffer->capacity = temp;
 		}
-		buffer->bytes = realloc(buffer->bytes , buffer->capacity * buffer->element_size); 
+		buffer->bytes = realloc(buffer->bytes , buffer->capacity * buffer->element_size);
 		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
 		if(buffer->on_post_resize != NULL) (buffer->on_post_resize)();
 	}
-	memset(buffer->bytes + previous_element_count * buffer->element_size , 0 , buffer->element_size * count); 
+	memset(buffer->bytes + previous_element_count * buffer->element_size , 0 , buffer->element_size * count);
 	CALLTRACE_END();
 }
 
@@ -112,7 +112,7 @@ function_signature(void, buf_pop_pseudo, BUFFER* buffer, buf_ucount_t count)
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
 	GOOD_ASSERT(count <= buffer->element_count, "Buffer Underflow Exception");
-	buffer->element_count -= count;	
+	buffer->element_count -= count;
 	CALLTRACE_END();
 }
 
@@ -123,36 +123,70 @@ function_signature(void, buf_insert_pseudo, BUFFER* buffer, buf_ucount_t index, 
 	GOOD_ASSERT(buffer != NULL, "Binded Buffer Is NULL Exception");
 	GOOD_ASSERT(index <= buffer->element_count,"Buffer Overflow Exception");
 
-	// calculate the number of elements to shift towards right
-	buf_ucount_t num_shift_elements = buffer->element_count - index; 
-
-	// increase the element_count by count
-	buffer->element_count += count;
-
 	// if space is insufficient then re-allocate
 	buf_ucount_t previous_capacity = buffer->capacity;
 	buffer->capacity = (buffer->capacity == 0) ? 1 : buffer->capacity;
-	while(buffer->capacity < buffer->element_count)
+	while(buffer->capacity < (buffer->element_count + count))
 		buffer->capacity <<= 1;
-	if(previous_capacity != buffer->capacity)
+	if(buffer->capacity > previous_capacity)
 	{
-		buffer->bytes = realloc(buffer->bytes, buffer->element_size * buffer->capacity);
+		buffer->bytes = realloc(buffer->bytes, (buffer->element_size + count) * buffer->capacity);
 		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
 	}
-	
-	// shift the elements to the right
-	void* dst_ptr = buffer->bytes + (buffer->element_count - 1) * buffer->element_size;
-	uint8_t offset = buffer->element_size * count;
-	while(num_shift_elements)
+
+	/*
+		There are number of elements which are prone to be overwritten if we just directly copy from src to dst, as
+		both would overlap. We need to somehow avoid overwriting the those values (staring from (insert index + insert count)).
+
+		There are two methods of doing this:
+
+		First, we can shift the elements by one stride (element_size) at a time for the 'number of elements to be shifted' times, to the right
+		But that would result in O(num_shift_elements * insert_count) time complexity -- which is not much efficient.
+
+		Second, we can allocate a temporary buffer which would preserve the prone to overwrite data (starting from (inset index + insert count)
+		up to 'element_count'). And then we can directly copy the elements staring from 'insert index' (upto 'insert count')
+		to 'insert index + insert count'. After that, copy the data from the temporary buffer to the memory starting at 'insert index + 2 * insert count'
+		upto 'element_count'.
+
+		In the second, if the size requirements for the temporary buffer is very large, greater than the permitted program stack size,
+		then we would have to allocate the memory in the heap. A warning should be issued as the user might be expecting no heap allocation.
+	*/
+
+	void* src = buffer->bytes + index * buffer->element_size;
+
+	if(index < buffer->element_count)
 	{
-		memcpy(dst_ptr , dst_ptr - offset, buffer->element_size);
-		dst_ptr -= buffer->element_size;
-		--num_shift_elements;
+			/* allocate temporary buffer to store the overwrite prone data */
+			buf_ucount_t overwrite_prone_size = ((index + count) > buffer->element_count) ? 0 : (buffer->element_count - (index + count)) * buffer->element_size;
+			void* overwrite_prone_data = NULL;
+			if(overwrite_prone_size > 2048)
+			{
+				log_wrn("Overwrite prone data is greater than 2 KB, allocating the memory in the heap");
+				overwrite_prone_data = malloc(overwrite_prone_size);
+			}
+			else if(overwrite_prone_size > 0)
+				overwrite_prone_data = alloca(overwrite_prone_size);
+
+			/* copy the overwrite prone data to the temporary buffer before initiating any copy operation to it. */
+			if(overwrite_prone_size > 0)
+				memcpy(overwrite_prone_data, buffer->bytes + (index + count) * buffer->element_size, overwrite_prone_size);
+
+			/* shift the elements to the right via copy */
+			void* dst = buffer->bytes + (index + count) * buffer->element_size;
+			memcpy(dst, src, count * buffer->element_size);
+			if(overwrite_prone_size > 0)
+				memcpy(dst + count * buffer->element_size, overwrite_prone_data, overwrite_prone_size);
+
+			if(overwrite_prone_size > 2048)
+				free(overwrite_prone_data);
+			/* else any memory allocated on the stack automatically freed after the function returns */
 	}
 
-	// set the inserted elements to zero
-	memset(buffer->bytes + index * buffer->element_size, 0, count * buffer->element_size);
-	
+	/* set the inserted elements to zero */
+	memset(src, 0, count * buffer->element_size);
+
+	buffer->element_count += count;
+
 	CALLTRACE_END();
 }
 
@@ -161,18 +195,22 @@ function_signature(void, buf_remove_pseudo, BUFFER* buffer, buf_ucount_t index, 
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	GOOD_ASSERT(index < buffer->element_count, "Index Out Of Range Exception");
-	GOOD_ASSERT(count <= buffer->element_count,"Buffer Underflow Exception");
-	buffer->element_count -= count; 
-	buf_ucount_t num_shift_elements = buffer->element_count;
-	void* dst_ptr = buffer->bytes + index * buffer->element_size;
-	while(num_shift_elements)
+	GOOD_ASSERT((index + count) <= buffer->element_count, "You're trying to remove elements out of the bounds of the buffer");
+
+	/* if there is any element left on the right most side */
+	if((index + count) < buffer->element_count)
 	{
-		memcpy(dst_ptr , dst_ptr + buffer->element_size, buffer->element_size); 
-		dst_ptr += buffer->element_size;
-		--num_shift_elements;
+		/* shift the elements to the left */
+		void* dst_ptr = buffer->bytes + index * buffer->element_size;
+		void* src_ptr = dst_ptr + count * buffer->element_size;
+		memmove(dst_ptr, src_ptr, (buffer->element_count - index - count) * buffer->element_size);
 	}
-	memset(buffer->bytes + buffer->element_count * buffer->element_size , 0 , buffer->element_size * count);
+
+	/* zero out the trailing elements (on the left) */
+	memset(buffer->bytes + (buffer->element_count - count) * buffer->element_size, 0, count * buffer->element_size);
+
+	buffer->element_count -= count;
+
 	CALLTRACE_END();
 }
 
@@ -180,12 +218,12 @@ function_signature(void, BUFset_auto_managed, bool value) { CALLTRACE_BEGIN(); b
 function_signature(void, buf_set_auto_managed, BUFFER* buffer, bool value)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer); 
+	check_pre_condition(buffer);
 	if(value && (buffer->auto_managed_empty_blocks == BUF_INVALID))
-			buffer->auto_managed_empty_blocks = BUFcreate(BUF_INVALID, sizeof(void*), 0, 0); 
+			buffer->auto_managed_empty_blocks = BUFcreate(BUF_INVALID, sizeof(void*), 0, 0);
 	else if(!value && (buffer->auto_managed_empty_blocks != BUF_INVALID))
-				buf_free(buffer->auto_managed_empty_blocks); 
- 	buffer->is_auto_managed = value; 
+				buf_free(buffer->auto_managed_empty_blocks);
+ 	buffer->is_auto_managed = value;
  	CALLTRACE_END();
 }
 
@@ -193,41 +231,41 @@ function_signature_void(buf_ucount_t, BUFget_offset) { CALLTRACE_BEGIN(); CALLTR
 function_signature(buf_ucount_t, buf_get_offset, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer); 
-	CALLTRACE_RETURN(buffer->offset); 
+	check_pre_condition(buffer);
+	CALLTRACE_RETURN(buffer->offset);
 }
 
 function_signature_void(buf_ucount_t, BUFget_capacity) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_get_capacity(binded_buffer)); }
 function_signature(buf_ucount_t, buf_get_capacity, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer); 
-	CALLTRACE_RETURN(buffer->capacity); 
+	check_pre_condition(buffer);
+	CALLTRACE_RETURN(buffer->capacity);
 }
 
-function_signature_void(buf_ucount_t, BUFget_element_count) { CALLTRACE_BEGIN(); CALLTRACE_RETURN( buf_get_element_count(binded_buffer)); } 
-function_signature(buf_ucount_t, buf_get_element_count, BUFFER* buffer) 
+function_signature_void(buf_ucount_t, BUFget_element_count) { CALLTRACE_BEGIN(); CALLTRACE_RETURN( buf_get_element_count(binded_buffer)); }
+function_signature(buf_ucount_t, buf_get_element_count, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer); 
-	CALLTRACE_RETURN(buffer->element_count); 
-} 
+	check_pre_condition(buffer);
+	CALLTRACE_RETURN(buffer->element_count);
+}
 
 function_signature_void(buf_ucount_t, BUFget_element_size) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_get_element_size(binded_buffer)); }
 function_signature(buf_ucount_t, buf_get_element_size, BUFFER* buffer)
-{ 
+{
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer); 
-	CALLTRACE_RETURN(buffer->element_size); 
-} 
+	check_pre_condition(buffer);
+	CALLTRACE_RETURN(buffer->element_size);
+}
 
 function_signature_void(void*, BUFget_ptr) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_get_ptr(binded_buffer)); }
 function_signature(void*, buf_get_ptr, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer); 
-	CALLTRACE_RETURN(buffer->bytes); 
-} 
+	check_pre_condition(buffer);
+	CALLTRACE_RETURN(buffer->bytes);
+}
 
 function_signature(void, BUFset_offset, buf_ucount_t offset) { CALLTRACE_BEGIN(); buf_set_offset(binded_buffer, offset); CALLTRACE_END(); }
 function_signature(void, buf_set_offset, BUFFER* buffer, buf_ucount_t offset)
@@ -249,10 +287,10 @@ function_signature(void, buf_set_capacity, BUFFER* buffer, buf_ucount_t capacity
 
 function_signature(void, BUFset_element_count, buf_ucount_t element_count) { CALLTRACE_BEGIN(); buf_set_element_count(binded_buffer, element_count); CALLTRACE_END(); }
 function_signature(void, buf_set_element_count, BUFFER* buffer, buf_ucount_t element_count)
-{ 
+{
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	buffer->element_count = element_count; 
+	buffer->element_count = element_count;
 	CALLTRACE_END();
 }
 
@@ -261,46 +299,46 @@ function_signature(void, buf_set_element_size, BUFFER* buffer, buf_ucount_t elem
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	buffer->element_size = element_size; 
+	buffer->element_size = element_size;
 	CALLTRACE_END();
-} 
+}
 
 function_signature(void, BUFset_ptr, void* ptr) { CALLTRACE_BEGIN(); buf_set_ptr(binded_buffer, ptr); CALLTRACE_END(); }
 function_signature(void, buf_set_ptr, BUFFER* buffer, void* ptr)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	buffer->bytes = ptr; 
+	buffer->bytes = ptr;
 	CALLTRACE_END();
 }
 
 function_signature_void(BUFFER*, BUFget_binded_buffer)
-{ 
+{
 	CALLTRACE_BEGIN();
 	CALLTRACE_RETURN(binded_buffer);
-} 
+}
 
 function_signature_void(bool, BUFis_auto_managed) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_is_auto_managed(binded_buffer)); }
 function_signature(bool, buf_is_auto_managed, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	CALLTRACE_RETURN(buffer->is_auto_managed); 
+	CALLTRACE_RETURN(buffer->is_auto_managed);
 }
 
 function_signature(void, BUFbind, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
   binded_buffer = buffer;
-  CALLTRACE_END(); 
-} 
+  CALLTRACE_END();
+}
 
 function_signature_void(void, BUFunbind)
-{ 
+{
 	CALLTRACE_BEGIN();
-	binded_buffer = NULL; 
+	binded_buffer = NULL;
 	CALLTRACE_END();
-} 
+}
 
 function_signature_void(void, BUFlog) { CALLTRACE_BEGIN(); buf_log(binded_buffer); CALLTRACE_END(); }
 function_signature(void, buf_log, BUFFER* buffer)
@@ -325,7 +363,7 @@ function_signature(void, BUFtraverse_elements, buf_ucount_t start, buf_ucount_t 
 function_signature(void, buf_traverse_elements, BUFFER* buffer, buf_ucount_t start, buf_ucount_t end, void (*func)(void* /*element ptr*/, void* /*args ptr*/), void* args)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer); 
+	check_pre_condition(buffer);
 	GOOD_ASSERT((start <= end) && (start < buffer->element_count) && (end < buffer->element_count), "(start <= end) && (start < buffer->element_count) && (end < buffer->element_count) evaulates to false");
 	for(buf_ucount_t i = start; i <= end; i++)
 	 		func(buf_getptr_at(buffer, i), args);
@@ -337,7 +375,7 @@ function_signature(static bool, buf_is_stack_allocated, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	CALLTRACE_RETURN((buffer->info & STACK_ALLOCATED_OBJECT) == STACK_ALLOCATED_OBJECT); 
+	CALLTRACE_RETURN((buffer->info & STACK_ALLOCATED_OBJECT) == STACK_ALLOCATED_OBJECT);
 }
 
 function_signature_void(static bool, BUFis_heap_allocated) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_is_heap_allocated(binded_buffer)); }
@@ -345,7 +383,7 @@ function_signature(static bool, buf_is_heap_allocated, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	CALLTRACE_RETURN((buffer->info & HEAP_ALLOCATED_OBJECT) == HEAP_ALLOCATED_OBJECT); 
+	CALLTRACE_RETURN((buffer->info & HEAP_ALLOCATED_OBJECT) == HEAP_ALLOCATED_OBJECT);
 }
 
 function_signature_void(void, BUFfree) { CALLTRACE_BEGIN(); buf_free(binded_buffer); CALLTRACE_END(); }
@@ -357,14 +395,14 @@ function_signature(void, buf_free, BUFFER* buffer)
 		buf_traverse_elements(buffer, 0, buf_get_element_count(buffer)- 1, (void (*)(void*, void*))(buffer->free), NULL);
 	if(buffer->bytes != NULL)
 	{
-		free(buffer->bytes);  
+		free(buffer->bytes);
 		buffer->bytes == NULL;
 	}
 
   if(buffer->info & HEAP_ALLOCATED_OBJECT)
-  { buffer->info = 0x00; free(buffer) ; } 
+  { buffer->info = 0x00; free(buffer) ; }
 	buffer = NULL;
-	CALLTRACE_END();	
+	CALLTRACE_END();
 }
 
 function_signature_void(BUFFER*, BUFget_clone)
@@ -397,7 +435,7 @@ function_signature(void, buf_copy_to, BUFFER* buffer, BUFFER* destination)
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
 	GOOD_ASSERT(destination != NULL, "destination buffer is NULL Exception");
-	GOOD_ASSERT(buffer != destination, "source and destination buffers are referencing to the same memory location"); 
+	GOOD_ASSERT(buffer != destination, "source and destination buffers are referencing to the same memory location");
 	GOOD_ASSERT(destination->element_size == buffer->element_size, "element size of the source and destination buffers are not identical");
 	GOOD_ASSERT(buf_get_buffer_size(buffer) != 0, "buffer size of the source buffer is zero");
 	if(destination->capacity < buffer->element_count)
@@ -410,14 +448,14 @@ function_signature(void, buf_copy_to, BUFFER* buffer, BUFFER* destination)
 	buf_set_on_pre_resize(destination, buffer->on_pre_resize);
 	buf_set_on_post_resize(destination, buffer->on_post_resize);
 	buf_set_on_free(destination, buffer->free);
-	CALLTRACE_END(); 
+	CALLTRACE_END();
 }
 
 function_signature(BUFFER*, BUFcopy_construct, BUFFER* source)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(source != NULL, "source buffer Is NULL Exception"); 
-	BUFFER* buffer = BUFcreate(NULL, source->element_size, source->capacity, source->offset); 
+	GOOD_ASSERT(source != NULL, "source buffer Is NULL Exception");
+	BUFFER* buffer = BUFcreate(NULL, source->element_size, source->capacity, source->offset);
 	buf_copy_to(source, buffer);
 	CALLTRACE_RETURN(buffer);
 }
@@ -425,8 +463,8 @@ function_signature(BUFFER*, BUFcopy_construct, BUFFER* source)
 function_signature(BUFFER, buf_copy_construct, BUFFER* source)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(source != NULL, "source buffer is NULL Exception");			
-	BUFFER buffer = buf_create(source->element_size, source->capacity, source->offset); 
+	GOOD_ASSERT(source != NULL, "source buffer is NULL Exception");
+	BUFFER buffer = buf_create(source->element_size, source->capacity, source->offset);
 	buf_copy_to(source, &buffer);
 	CALLTRACE_RETURN(buffer);
 }
@@ -435,7 +473,7 @@ function_signature(void, BUFset_on_free, void (*free)(void*)) { CALLTRACE_BEGIN(
 function_signature(void, buf_set_on_free, BUFFER* buffer, void (*free)(void*))
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);			
+	check_pre_condition(buffer);
 	buffer->free = free;
 	CALLTRACE_END();
 }
@@ -457,13 +495,13 @@ function_signature(BUFFER*, BUFcreate_object, void* bytes)
 	BUFFER* buffer = bytes;
 	buffer->bytes = NULL;
 	buffer->info = 0x00;
-	buffer->info |= STACK_ALLOCATED_OBJECT; 
+	buffer->info |= STACK_ALLOCATED_OBJECT;
 	buffer->element_size = 0;
 	buffer->element_count = 0;
 	buffer->capacity = 0;
-	buffer->auto_managed_empty_blocks = NULL; 
-	buffer->is_auto_managed = false; 
-	buffer->on_pre_resize = NULL; 
+	buffer->auto_managed_empty_blocks = NULL;
+	buffer->is_auto_managed = false;
+	buffer->on_pre_resize = NULL;
 	buffer->on_post_resize = NULL;
 	buffer->offset = 0;
 	buffer->free = NULL;
@@ -474,43 +512,43 @@ function_signature(BUFFER*, BUFcreate_object, void* bytes)
 function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset)
 {
 	CALLTRACE_BEGIN();
-	GOOD_ASSERT(((int64_t)element_size) > 0, "element_size cannot be negative or zero"); 
+	GOOD_ASSERT(((int64_t)element_size) > 0, "element_size cannot be negative or zero");
 	GOOD_ASSERT(((int64_t)capacity) >= 0, "capacity cannot be negative");
 	GOOD_ASSERT(((int64_t)offset) >= 0, "offset cannot be negative");
 	if(buffer == NULL)
-	{ 
+	{
 		buffer = malloc(sizeof(BUFFER));
 		GOOD_ASSERT(buffer != NULL, "Memory Allocation Failure Exception");
-		buffer->info = 0x00; 
+		buffer->info = 0x00;
 		buffer->info |= HEAP_ALLOCATED_OBJECT;
-		buffer->auto_managed_empty_blocks = NULL; 
+		buffer->auto_managed_empty_blocks = NULL;
 		buffer->is_auto_managed = false;
-		buffer->on_pre_resize = NULL; 
+		buffer->on_pre_resize = NULL;
 		buffer->on_post_resize = NULL;
 		buffer->free = NULL;
 		buffer->is_ptr_queried = false;
 	}
 	if((capacity > 0) || (offset > 0))
 	{
-		buffer->bytes = (void*)malloc(element_size * capacity + offset); 
+		buffer->bytes = (void*)malloc(element_size * capacity + offset);
 		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
 	}
 	else
 		buffer->bytes = NULL;
-	buffer->element_size = element_size; 
+	buffer->element_size = element_size;
 	buffer->capacity = capacity;
 	buffer->element_count = 0;
 	buffer->offset = offset;
-	CALLTRACE_RETURN(buffer); 
+	CALLTRACE_RETURN(buffer);
 }
 
 function_signature(void, BUFget_at, buf_ucount_t index, void* out_value) { CALLTRACE_BEGIN(); buf_get_at(binded_buffer, index, out_value); CALLTRACE_END(); }
 function_signature(void, buf_get_at, BUFFER* buffer, buf_ucount_t index, void* out_value)
-{	
+{
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);			
+	check_pre_condition(buffer);
 	GOOD_ASSERT(index < buffer->element_count,"index >= buffer->element_count, Index Out of Range Exception");
-	memcpy(out_value , buffer->bytes + index * buffer->element_size, buffer->element_size); 
+	memcpy(out_value , buffer->bytes + index * buffer->element_size, buffer->element_size);
 	CALLTRACE_END();
 }
 
@@ -526,19 +564,19 @@ function_signature(void*, BUFgetptr_at, buf_ucount_t index) { CALLTRACE_BEGIN();
 function_signature(void*, buf_getptr_at, BUFFER* buffer, buf_ucount_t index)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);			
+	check_pre_condition(buffer);
 	GOOD_ASSERT(index < buffer->element_count,"index >= buffer->element_count, Index Out of Range Exception");
 	PTR_QUERIED(buffer);
-	CALLTRACE_RETURN(buffer->bytes + index * buffer->element_size); 
+	CALLTRACE_RETURN(buffer->bytes + index * buffer->element_size);
 }
 
 function_signature(void, BUFset_at, buf_ucount_t index , void* in_value) { CALLTRACE_BEGIN(); buf_set_at(binded_buffer, index, in_value); CALLTRACE_END(); }
 function_signature(void, buf_set_at, BUFFER* buffer, buf_ucount_t index , void* in_value)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);		
+	check_pre_condition(buffer);
 	GOOD_ASSERT(index < buffer->element_count,"Index Out of Range Exception");
-	memcpy(buffer->bytes + index * buffer->element_size, in_value , buffer->element_size); 
+	memcpy(buffer->bytes + index * buffer->element_size, in_value , buffer->element_size);
 	CALLTRACE_END();
 }
 
@@ -546,7 +584,7 @@ function_signature_void(void*, BUFget_offset_bytes) { CALLTRACE_BEGIN(); CALLTRA
 function_signature(void*, buf_get_offset_bytes, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);	
+	check_pre_condition(buffer);
 	GOOD_ASSERT(buffer->offset != 0, "buffer->offset equals to Zero!");
 	PTR_QUERIED(buffer);
 	CALLTRACE_RETURN(buffer->bytes + buffer->capacity * buffer->element_size);
@@ -556,7 +594,7 @@ function_signature(void, BUFset_offset_bytes, void* offset_bytes) { CALLTRACE_BE
 function_signature(void, buf_set_offset_bytes, BUFFER* buffer, void* offset_bytes)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);	
+	check_pre_condition(buffer);
 	GOOD_ASSERT(offset_bytes != NULL, "offset_bytes is NULL Exception");
 	GOOD_ASSERT(buffer->offset != 0, "buffer->offset equals to Zero!");
 	memcpy(buf_get_offset_bytes(buffer), offset_bytes, buffer->offset);
@@ -567,7 +605,7 @@ function_signature_void(buf_ucount_t, BUFget_buffer_size) { CALLTRACE_BEGIN(); C
 function_signature(buf_ucount_t, buf_get_buffer_size, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);	
+	check_pre_condition(buffer);
 	CALLTRACE_RETURN(buffer->capacity * buffer->element_size  + buffer->offset);
 }
 
@@ -579,16 +617,17 @@ function_signature(void, buf_resize, BUFFER* buffer, buf_ucount_t new_capacity)
 	GOOD_ASSERT(new_capacity != 0, "new_capacity == 0");
 	if(new_capacity == buffer->capacity)
 		CALLTRACE_RETURN();
-	buf_ucount_t new_buffer_size = new_capacity * buffer->element_size + buffer->offset; 
+	buf_ucount_t new_buffer_size = new_capacity * buffer->element_size + buffer->offset;
 	buf_ucount_t buffer_size = buffer->capacity * buffer->element_size + buffer->offset;
-	void* new_buffer = malloc(new_buffer_size); 
+	void* new_buffer = malloc(new_buffer_size);
+	GOOD_ASSERT(new_buffer != NULL, "Failed to allocate memory");
 	if(new_buffer_size > buffer_size)
-		
+
 	{
 		if((buffer_size - buffer->offset) != 0)
 		//copy only the elments, excluding the offset
 		memcpy(new_buffer, buffer->bytes, buffer_size - buffer->offset);
-		if(buffer->offset != 0) 
+		if(buffer->offset != 0)
 		//copy the offset bytes at the end of the new buffer
 		memcpy(new_buffer + new_buffer_size - buffer->offset, buffer->bytes + buffer_size - buffer->offset, buffer->offset);
 		//set the intermediate bytes to zero
@@ -616,12 +655,12 @@ function_signature(void, BUFclear_buffer, void* clear_value) { CALLTRACE_BEGIN()
 function_signature(void, buf_clear_buffer, BUFFER* buffer, void* clear_value)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);		
+	check_pre_condition(buffer);
 	if(clear_value == NULL)
-		memset(buffer->bytes, 0, buffer->capacity * buffer->element_size + buffer->offset); 
+		memset(buffer->bytes, 0, buffer->capacity * buffer->element_size + buffer->offset);
 	else
 	{
-		buf_ucount_t capacity = buffer->capacity; 
+		buf_ucount_t capacity = buffer->capacity;
 		while(capacity > 0)
 		{
 			--capacity;
@@ -637,22 +676,22 @@ function_signature(void, BUFclear, void* clear_value) { CALLTRACE_BEGIN(); buf_c
 function_signature(void, buf_clear, BUFFER* buffer, void* clear_value)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);		
+	check_pre_condition(buffer);
 
 	if((buffer->free != NULL) && (buffer->element_count > 0))
 		buf_traverse_elements(buffer, 0, buf_get_element_count(buffer) - 1, (void (*)(void*, void*))(buffer->free), NULL);
 
 	if(clear_value == NULL)
-		memset(buffer->bytes , 0 , buffer->element_count * buffer->element_size) ; 
+		memset(buffer->bytes , 0 , buffer->element_count * buffer->element_size) ;
 	else
 	{
 		buf_ucount_t element_count = buffer->element_count;
 		while(element_count > 0)
 		{
 			--element_count;
-			memcpy(buffer->bytes + element_count * buffer->element_size, clear_value , buffer->element_size); 
+			memcpy(buffer->bytes + element_count * buffer->element_size, clear_value , buffer->element_size);
 		}
-	} 
+	}
  	buffer->element_count = 0;
  	CALLTRACE_END();
 }
@@ -661,24 +700,24 @@ function_signature(void, BUFinsert_at_noalloc, buf_ucount_t index , void* in_val
 function_signature(void, buf_insert_at_noalloc, BUFFER* buffer, buf_ucount_t index , void* in_value , void* out_value)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);	
+	check_pre_condition(buffer);
 	GOOD_ASSERT(index < buffer->capacity,"Buffer Overflow Exception");
 	GOOD_ASSERT(buffer->element_count > index ,"Index should be less than buffer->element_count");
 	if(out_value != NULL)
-		memcpy(out_value , buffer->bytes + index * buffer->element_size , buffer->element_size) ; 
-	memcpy(buffer->bytes + index * buffer->element_size, in_value , buffer->element_size) ;  
+		memcpy(out_value , buffer->bytes + index * buffer->element_size , buffer->element_size) ;
+	memcpy(buffer->bytes + index * buffer->element_size, in_value , buffer->element_size) ;
 	CALLTRACE_END();
 }
 
 function_signature(void, BUFinsert_at, buf_ucount_t index , void* in_value) { CALLTRACE_BEGIN(); buf_insert_at(binded_buffer, index, in_value); CALLTRACE_END(); }
 function_signature(void, buf_insert_at, BUFFER* buffer, buf_ucount_t index , void* in_value)
-{	
+{
 	CALLTRACE_BEGIN();
 	GOOD_ASSERT(buffer != NULL, "Binded Buffer Is NULL Exception");
 	GOOD_ASSERT(index <= buffer->element_count,"Buffer Overflow Exception");
 
 	// calculate the number of elements to shift towards right
-	buf_ucount_t num_shift_elements = buffer->element_count - index; 
+	buf_ucount_t num_shift_elements = buffer->element_count - index;
 
 	// increase the element_count by count
 	buffer->element_count += 1;
@@ -688,7 +727,7 @@ function_signature(void, buf_insert_at, BUFFER* buffer, buf_ucount_t index , voi
 	buffer->capacity = (buffer->capacity == 0) ? 1 : buffer->capacity;
 	while(buffer->capacity < buffer->element_count)
 		buffer->capacity <<= 1;
-	if(previous_capacity != buffer->capacity)
+	if(buffer->capacity > previous_capacity)
 	{
 		buffer->bytes = realloc(buffer->bytes, buffer->element_size * buffer->capacity);
 		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
@@ -706,7 +745,7 @@ function_signature(void, buf_insert_at, BUFFER* buffer, buf_ucount_t index , voi
 
 	// copy in_value to the inserted block
 	memcpy(buffer->bytes + index * buffer->element_size, in_value, buffer->element_size);
-	
+
 	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
 }
@@ -719,17 +758,17 @@ function_signature(bool, buf_remove_at_noshift, BUFFER* buffer, buf_ucount_t ind
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
-	GOOD_ASSERT(index < binded_buffer->element_count,"index >= binded_buffer->element_count, Index Out of Range Exception");
+	GOOD_ASSERT(index < buffer->element_count,"index >= buffer->element_count, Index Out of Range Exception");
 	if(out_value != NULL)
 		memcpy(out_value , buffer->bytes + index * buffer->element_size , buffer->element_size) ;
 	if(buf_is_auto_managed(buffer))
-	{		
-		BUFFER* previous_buffer = buffer; 
+	{
+		BUFFER* previous_buffer = buffer;
 		void* ptr = buffer->bytes + index * buffer->element_size;
 		if(buf_find_index_of(buffer->auto_managed_empty_blocks, &ptr, ptr_comparer) == BUF_INVALID_INDEX) /*if ptr is not found in the auto_managed_empty_blocks BUFFER*/
 			buf_push(buffer->auto_managed_empty_blocks, &ptr);
 	}
-	memset(buffer->bytes + index * buffer->element_size , 0 , buffer->element_size); 
+	memset(buffer->bytes + index * buffer->element_size , 0 , buffer->element_size);
 	CALLTRACE_RETURN(true);
 }
 
@@ -737,12 +776,12 @@ function_signature(bool, BUFremove_at, buf_ucount_t index , void* out_value) { C
 function_signature(bool, buf_remove_at, BUFFER* buffer, buf_ucount_t index , void* out_value)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);	
+	check_pre_condition(buffer);
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
 	GOOD_ASSERT(index < buffer->element_count,"Index Out of Range Exception");
-	--(buffer->element_count); 
+	--(buffer->element_count);
 	if(out_value != NULL)
-		memcpy(out_value , buffer->bytes + index * buffer->element_size , buffer->element_size); 
+		memcpy(out_value , buffer->bytes + index * buffer->element_size , buffer->element_size);
 
 	void* dst_ptr = buffer->bytes + index * buffer->element_size;
 	if(index <= buffer->element_count)
@@ -750,12 +789,12 @@ function_signature(bool, buf_remove_at, BUFFER* buffer, buf_ucount_t index , voi
 		buf_ucount_t num_shift_elements = (buffer->element_count - index) ;
 		while(num_shift_elements > 0)
 		{
-			memcpy(dst_ptr , dst_ptr + buffer->element_size, buffer->element_size); 
+			memcpy(dst_ptr , dst_ptr + buffer->element_size, buffer->element_size);
 			dst_ptr += buffer->element_size;
 			--num_shift_elements;
 		}
 	}
-	memset(dst_ptr , 0 , buffer->element_size); 
+	memset(dst_ptr , 0 , buffer->element_size);
 	CALLTRACE_RETURN(true);
 }
 
@@ -763,21 +802,21 @@ function_signature(bool, BUFremove_noshift, void* object, bool (*comparer)(void*
 function_signature(bool, buf_remove_noshift, BUFFER* buffer, void* object, bool (*comparer)(void*, void*))
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);	
-	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");	
-	void* cursor = buffer->bytes; 
+	check_pre_condition(buffer);
+	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
+	void* cursor = buffer->bytes;
 	for(buf_ucount_t i = 0; i < buffer->element_count; i++, cursor += buffer->element_size)
 	{
 		if(comparer(object, cursor))
 		{
-			memset(cursor, 0, buffer->element_size); 
+			memset(cursor, 0, buffer->element_size);
 			if(buf_is_auto_managed(buffer))
 				if(buf_find_index_of(buffer->auto_managed_empty_blocks, &cursor, ptr_comparer) == BUF_INVALID_INDEX) /*if ptr is not found in the auto_managed_empty_blocks BUFFER*/
-					buf_push(buffer->auto_managed_empty_blocks, &cursor); 
-			CALLTRACE_RETURN(true); 
+					buf_push(buffer->auto_managed_empty_blocks, &cursor);
+			CALLTRACE_RETURN(true);
 		}
 	}
-	CALLTRACE_RETURN(false); 
+	CALLTRACE_RETURN(false);
 }
 
 function_signature(bool, BUFremove, void* object, bool (*comparer)(void*, void*)) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_remove(binded_buffer, object, comparer)); }
@@ -785,19 +824,19 @@ function_signature(bool, buf_remove, BUFFER* buffer, void* object, bool (*compar
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");	
-	void* cursor = buffer->bytes; 
+	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
+	void* cursor = buffer->bytes;
 	for(buf_ucount_t i = 0; i < buffer->element_count; i++, cursor += buffer->element_size)
 	{
 		if(comparer(object, cursor))
 		{
-			memcpy(cursor, cursor + buffer->element_size, (buffer->element_count - i - 1) * buffer->element_size); 
-			memset(buf_peek_ptr(buffer), 0, buffer->element_size); 
+			memcpy(cursor, cursor + buffer->element_size, (buffer->element_count - i - 1) * buffer->element_size);
+			memset(buf_peek_ptr(buffer), 0, buffer->element_size);
 			--(buffer->element_count);
-			CALLTRACE_RETURN(true); 
+			CALLTRACE_RETURN(true);
 		}
 	}
-	CALLTRACE_RETURN(false); 
+	CALLTRACE_RETURN(false);
 }
 
 function_signature_void(void, BUFfit) { CALLTRACE_BEGIN(); buf_fit(binded_buffer); CALLTRACE_END(); }
@@ -805,9 +844,9 @@ function_signature(void, buf_fit, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
 	//TODO: Replace this with BUFresize(binded_buffer->element_count)
-	check_pre_condition(buffer);	
-	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!"); 
-	buffer->bytes =  realloc(buffer->bytes , buffer->element_count * buffer->element_size); 
+	check_pre_condition(buffer);
+	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
+	buffer->bytes =  realloc(buffer->bytes , buffer->element_count * buffer->element_size);
 	GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
 	buffer->capacity = buffer->element_count;
 	WARN_IF_PTR_QUERIED(buffer);
@@ -818,8 +857,8 @@ function_signature_void(void*, BUFpeek_ptr) { CALLTRACE_BEGIN(); CALLTRACE_RETUR
 function_signature(void*, buf_peek_ptr, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);	
-	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!"); 
+	check_pre_condition(buffer);
+	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
 	PTR_QUERIED(buffer);
 	CALLTRACE_RETURN(buffer->bytes + (buffer->element_count - 1) * buffer->element_size);
 }
@@ -828,17 +867,17 @@ function_signature(void, BUFpeek, void* out_value) { CALLTRACE_BEGIN(); buf_peek
 function_signature(void, buf_peek, BUFFER* buffer, void* out_value)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);	
+	check_pre_condition(buffer);
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
-	memcpy(out_value, buffer->bytes + (buffer->element_count - 1) * buffer->element_size , buffer->element_size); 
-	CALLTRACE_END();  
+	memcpy(out_value, buffer->bytes + (buffer->element_count - 1) * buffer->element_size , buffer->element_size);
+	CALLTRACE_END();
 }
 
 function_signature(void, BUFpop, void* out_value) { CALLTRACE_BEGIN(); buf_pop(binded_buffer, out_value); CALLTRACE_END(); }
 function_signature(void, buf_pop, BUFFER* buffer, void* out_value)
 {
 	CALLTRACE_BEGIN();
-	check_pre_condition(buffer);	
+	check_pre_condition(buffer);
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
 	--(buffer->element_count);
 	if(out_value != NULL)
@@ -851,9 +890,9 @@ function_signature(void, buf_pop, BUFFER* buffer, void* out_value)
 function_signature_void(void*, BUFpop_get_ptr) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_pop_get_ptr(binded_buffer)); }
 function_signature(void*, buf_pop_get_ptr, BUFFER* buffer)
 {
-	CALLTRACE_BEGIN(); 
-	void* ptr = buf_peek_ptr(buffer); 
-	buf_pop_pseudo(buffer, 1); 
+	CALLTRACE_BEGIN();
+	void* ptr = buf_peek_ptr(buffer);
+	buf_pop_pseudo(buffer, 1);
 	PTR_QUERIED(buffer);
 	CALLTRACE_RETURN(ptr);
 }
@@ -864,10 +903,10 @@ function_signature(buf_ucount_t, buf_find_index_of, BUFFER* buffer, void* value,
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	void* cursor = buffer->bytes; 
+	void* cursor = buffer->bytes;
 	for(buf_ucount_t i = 0; i < buffer->element_count; i++, cursor += buffer->element_size)
 		if(comparer(value, cursor))
-			CALLTRACE_RETURN(i); 
+			CALLTRACE_RETURN(i);
 	CALLTRACE_RETURN(BUF_INVALID_INDEX);
 }
 
@@ -876,7 +915,7 @@ function_signature(void, buf_push, BUFFER* buffer, void* in_value)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	buf_ucount_t new_capacity = (buffer->capacity == 0) ? 1 : buffer->capacity; 
+	buf_ucount_t new_capacity = (buffer->capacity == 0) ? 1 : buffer->capacity;
 	++(buffer->element_count);
 	while(new_capacity < buffer->element_count)
 		new_capacity *= 2;
@@ -891,7 +930,7 @@ function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_ucount_t
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	buf_ucount_t new_capacity = (buffer->capacity == 0) ? 1 : buffer->capacity; 
+	buf_ucount_t new_capacity = (buffer->capacity == 0) ? 1 : buffer->capacity;
 	buffer->element_count += count;
 	while(new_capacity < buffer->element_count)
 		new_capacity *= 2;
@@ -899,7 +938,7 @@ function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_ucount_t
 	for(buf_ucount_t i = 0; i < count; i++, in_value += buffer->element_size)
 		buf_set_at(buffer, buffer->element_count - count + i, in_value);
 	WARN_IF_PTR_QUERIED(buffer);
-	CALLTRACE_END(); 
+	CALLTRACE_END();
 }
 
 function_signature(void, buf_vprintf, BUFFER* buffer, char* stage_buffer, const char* format_string, va_list args)
@@ -938,7 +977,7 @@ function_signature(void, buf_push_string, BUFFER* buffer, const char* string)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	buf_pushv(buffer, (char*)string, strlen(string));	
+	buf_pushv(buffer, (char*)string, strlen(string));
 	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
 }
@@ -949,6 +988,71 @@ function_signature(void, buf_push_char, BUFFER* buffer, char value)
 	check_pre_condition(buffer);
 	buf_push(buffer, &value);
 	WARN_IF_PTR_QUERIED(buffer);
+	CALLTRACE_END();
+}
+
+function_signature(void, _buf_get_at_s, BUFFER* buffer, buf_ucount_t index, void* out_value, uint32_t out_value_size)
+{
+	CALLTRACE_BEGIN();
+	GOOD_ASSERT(out_value_size == buf_get_element_size(buffer), "Out value size doesn't match with the Buffer's element size");
+	buf_get_at(buffer, index, out_value);
+	CALLTRACE_END();
+}
+
+BUF_API function_signature(void, buf_push_u8, 	BUFFER* buffer, u8 value)
+{
+	CALLTRACE_BEGIN();
+	GOOD_ASSERT(buf_get_element_size(buffer) == sizeof(value), "Size mismatch");
+	buf_push(buffer, &value);
+	CALLTRACE_END();
+}
+BUF_API function_signature(void, buf_push_u16, 	BUFFER* buffer, u16 value)
+{
+	CALLTRACE_BEGIN();
+	GOOD_ASSERT(buf_get_element_size(buffer) == sizeof(value), "Size mismatch");
+	buf_push(buffer, &value);
+	CALLTRACE_END();
+}
+BUF_API function_signature(void, buf_push_u32, 	BUFFER* buffer, u32 value)
+{
+	CALLTRACE_BEGIN();
+	GOOD_ASSERT(buf_get_element_size(buffer) == sizeof(value), "Size mismatch");
+	buf_push(buffer, &value);
+	CALLTRACE_END();
+}
+BUF_API function_signature(void, buf_push_u64, 	BUFFER* buffer, u64 value)
+{
+	CALLTRACE_BEGIN();
+	GOOD_ASSERT(buf_get_element_size(buffer) == sizeof(value), "Size mismatch");
+	buf_push(buffer, &value);
+	CALLTRACE_END();
+}
+BUF_API function_signature(void, buf_push_s8, 	BUFFER* buffer, s8 value)
+{
+	CALLTRACE_BEGIN();
+	GOOD_ASSERT(buf_get_element_size(buffer) == sizeof(value), "Size mismatch");
+	buf_push(buffer, &value);
+	CALLTRACE_END();
+}
+BUF_API function_signature(void, buf_push_s16, 	BUFFER* buffer, s16 value)
+{
+	CALLTRACE_BEGIN();
+	GOOD_ASSERT(buf_get_element_size(buffer) == sizeof(value), "Size mismatch");
+	buf_push(buffer, &value);
+	CALLTRACE_END();
+}
+BUF_API function_signature(void, buf_push_s32, 	BUFFER* buffer, s32 value)
+{
+	CALLTRACE_BEGIN();
+	GOOD_ASSERT(buf_get_element_size(buffer) == sizeof(value), "Size mismatch");
+	buf_push(buffer, &value);
+	CALLTRACE_END();
+}
+BUF_API function_signature(void, buf_push_s64, 	BUFFER* buffer, s64 value)
+{
+	CALLTRACE_BEGIN();
+	GOOD_ASSERT(buf_get_element_size(buffer) == sizeof(value), "Size mismatch");
+	buf_push(buffer, &value);
 	CALLTRACE_END();
 }
 
