@@ -505,7 +505,9 @@ function_signature(BUFFER*, BUFcreate_object, void* bytes)
 	buffer->on_post_resize = NULL;
 	buffer->offset = 0;
 	buffer->free = NULL;
+#ifdef BUF_DEBUG
 	buffer->is_ptr_queried = false;
+#endif /* BUF_DEBUG */
 	CALLTRACE_RETURN(buffer);
 }
 
@@ -526,7 +528,9 @@ function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size
 		buffer->on_pre_resize = NULL;
 		buffer->on_post_resize = NULL;
 		buffer->free = NULL;
+	#ifdef BUF_DEBUG
 		buffer->is_ptr_queried = false;
+	#endif /* BUF_DEBUG */
 	}
 	if((capacity > 0) || (offset > 0))
 	{
