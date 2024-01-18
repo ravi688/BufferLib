@@ -429,6 +429,16 @@ function_signature(void, buf_move_to, BUFFER* buffer, BUFFER* destination)
 	CALLTRACE_END();
 }
 
+function_signature(void, BUFmove, BUFFER* destination) { CALLTRACE_BEGIN(); buf_move(binded_buffer, destination); CALLTRACE_END(); }
+function_signature(void, buf_move, BUFFER* buffer, BUFFER* destination)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	GOOD_ASSERT(destination != NULL, "destination buffer is NULL Exception");
+	memcpy(buffer, destination, sizeof(BUFFER));
+	CALLTRACE_END();
+}
+
 function_signature(void, BUFcopy_to, BUFFER* destination) { CALLTRACE_BEGIN(); buf_copy_to(binded_buffer, destination); CALLTRACE_END(); }
 function_signature(void, buf_copy_to, BUFFER* buffer, BUFFER* destination)
 {
