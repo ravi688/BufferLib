@@ -544,6 +544,7 @@ BUF_API function_signature(void, buf_move, BUFFER* buffer, BUFFER* destination);
 BUF_API function_signature(BUFFER, buf_copy_construct, BUFFER* source);
 BUF_API function_signature(void, buf_set_on_free, BUFFER* buffer, void (*free)(void*));
 BUF_API function_signature(void, buf_resize, BUFFER* buffer, buf_ucount_t new_capacity);
+BUF_API function_signature(void, buf_ensure_capacity, BUFFER* buffer, buf_ucount_t min_capacity);
 BUF_API function_signature(void, buf_clear_buffer, BUFFER* buffer, void* clear_value);
 BUF_API function_signature(bool, buf_is_auto_managed, BUFFER* buffer);
 BUF_API function_signature(buf_ucount_t, buf_get_capacity, BUFFER* buffer);
@@ -586,6 +587,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define BUFset_auto_managed(...) 						define_alias_function_macro(BUFset_auto_managed, __VA_ARGS__)
 #define BUFset_offset(...) 									define_alias_function_macro(BUFset_offset, __VA_ARGS__)
 #define BUFresize(...) 											define_alias_function_macro(BUFresize, __VA_ARGS__)
+#define BUFensure_capacity(...)							define_alias_function_macro(BUFensure_capacity, __VA_ARGS__)
 #define BUFclear_buffer(...) 								define_alias_function_macro(BUFclear_buffer, __VA_ARGS__)
 #define BUFtraverse_elements(...) 					define_alias_function_macro(BUFtraverse_elements, __VA_ARGS__)
 #define BUFset_offset_bytes(...) 						define_alias_function_macro(BUFset_offset_bytes, __VA_ARGS__)
@@ -644,6 +646,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_set_auto_managed(...) 					define_alias_function_macro(buf_set_auto_managed, __VA_ARGS__)
 #define buf_set_offset(...) 								define_alias_function_macro(buf_set_offset, __VA_ARGS__)
 #define buf_resize(...) 										define_alias_function_macro(buf_resize, __VA_ARGS__)
+#define buf_ensure_capacity(...)						define_alias_function_macro(buf_ensure_capacity, __VA_ARGS__)
 #define buf_clear_buffer(...) 							define_alias_function_macro(buf_clear_buffer, __VA_ARGS__)
 #define buf_traverse_elements(...) 					define_alias_function_macro(buf_traverse_elements, __VA_ARGS__)
 #define buf_set_offset_bytes(...) 					define_alias_function_macro(buf_set_offset_bytes, __VA_ARGS__)

@@ -665,6 +665,17 @@ function_signature(void, buf_resize, BUFFER* buffer, buf_ucount_t new_capacity)
 	CALLTRACE_END();
 }
 
+function_signature(void, BUFensure_capacity, buf_ucount_t min_capacity) { CALLTRACE_BEGIN(); buf_ensure_capacity(binded_buffer, min_capacity); CALLTRACE_END(); }
+function_signature(void, buf_ensure_capacity, BUFFER* buffer, buf_ucount_t min_capacity)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	if(min_capacity <= buf_get_capacity(buffer))
+		CALLTRACE_RETURN();
+	buf_resize(buffer, min_capacity);
+	CALLTRACE_END();
+}
+
 function_signature(void, BUFclear_buffer, void* clear_value) { CALLTRACE_BEGIN(); buf_clear_buffer(binded_buffer, clear_value); CALLTRACE_END(); }
 function_signature(void, buf_clear_buffer, BUFFER* buffer, void* clear_value)
 {
