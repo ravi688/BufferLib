@@ -694,6 +694,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_push_auto(buffer, value) { __auto_type _value = value; buf_push(buffer, &_value); }
 #define buf_get_count(buffer) buf_get_element_count(buffer)
 #define buf_create_byte_buffer(capacity) buf_create(1, capacity, 0)
+#define BUFnew(element_size, capacity, offset) BUFcreate_new(NULL, element_size, capacity, offset)
 
 #define buf_vprintf(...) define_alias_function_macro(buf_vprintf, __VA_ARGS__)
 #define buf_printf(...) define_alias_function_macro(buf_printf, __VA_ARGS__)
