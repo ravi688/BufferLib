@@ -436,6 +436,12 @@ function_signature(void, buf_move, BUFFER* buffer, BUFFER* destination)
 	check_pre_condition(buffer);
 	GOOD_ASSERT(destination != NULL, "destination buffer is NULL Exception");
 	memcpy(destination, buffer, sizeof(BUFFER));
+	buffer->bytes = NULL;
+	buffer->element_size = 0;
+	buffer->element_count = 0;
+	buffer->capacity = 0;
+	buffer->auto_managed_empty_blocks = NULL;
+	buffer->offset = 0;
 	CALLTRACE_END();
 }
 
