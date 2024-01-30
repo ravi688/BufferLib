@@ -8,6 +8,25 @@
 #include <stdbool.h>
 #include <stdarg.h>
 
+#ifdef log_fetal_error
+#	undef log_fetal_error
+#endif
+#define log_fetal_error printf
+
+#ifdef CALLTRACE_BEGIN
+#	undef CALLTRACE_BEGIN
+#endif
+#define CALLTRACE_BEGIN() /* nothing */
+#ifdef CALLTRACE_END
+#	undef CALLTRACE_END
+#endif
+#define CALLTRACE_END() /* nothing */
+#ifdef CALLTRACE_RETURN
+#	undef CALLTRACE_RETURN
+#endif
+#define CALLTRACE_RETURN(x) return x
+
+
 #ifdef BUF_DEBUG
 #	define GOOD_ASSERT(bool_value, string) do { if(!(bool_value)) {  log_fetal_err("Assertion Failed: %s\n", string); } } while(false)
 	static void check_pre_condition(BUFFER* buffer);
