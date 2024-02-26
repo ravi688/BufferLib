@@ -1,6 +1,7 @@
 # BufferLib
 - BufferLib is a small library for managing memory buffers
 
+<a href="https://www.buymeacoffee.com/raviprakashsingh" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
 ### Documentation
 
