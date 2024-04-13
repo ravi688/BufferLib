@@ -8,6 +8,25 @@
 #include <stdbool.h>
 #include <stdarg.h>
 
+#ifdef log_fetal_error
+#	undef log_fetal_error
+#endif
+#define log_fetal_error printf
+
+#ifdef CALLTRACE_BEGIN
+#	undef CALLTRACE_BEGIN
+#endif
+#define CALLTRACE_BEGIN() /* nothing */
+#ifdef CALLTRACE_END
+#	undef CALLTRACE_END
+#endif
+#define CALLTRACE_END() /* nothing */
+#ifdef CALLTRACE_RETURN
+#	undef CALLTRACE_RETURN
+#endif
+#define CALLTRACE_RETURN(x) return x
+
+
 #ifdef BUF_DEBUG
 #	define GOOD_ASSERT(bool_value, string) do { if(!(bool_value)) {  log_fetal_err("Assertion Failed: %s\n", string); } } while(false)
 	static void check_pre_condition(BUFFER* buffer);
@@ -429,6 +448,22 @@ function_signature(void, buf_move_to, BUFFER* buffer, BUFFER* destination)
 	CALLTRACE_END();
 }
 
+function_signature(void, BUFmove, BUFFER* destination) { CALLTRACE_BEGIN(); buf_move(binded_buffer, destination); CALLTRACE_END(); }
+function_signature(void, buf_move, BUFFER* buffer, BUFFER* destination)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	GOOD_ASSERT(destination != NULL, "destination buffer is NULL Exception");
+	memcpy(destination, buffer, sizeof(BUFFER));
+	buffer->bytes = NULL;
+	buffer->element_size = 0;
+	buffer->element_count = 0;
+	buffer->capacity = 0;
+	buffer->auto_managed_empty_blocks = NULL;
+	buffer->offset = 0;
+	CALLTRACE_END();
+}
+
 function_signature(void, BUFcopy_to, BUFFER* destination) { CALLTRACE_BEGIN(); buf_copy_to(binded_buffer, destination); CALLTRACE_END(); }
 function_signature(void, buf_copy_to, BUFFER* buffer, BUFFER* destination)
 {
@@ -505,7 +540,9 @@ function_signature(BUFFER*, BUFcreate_object, void* bytes)
 	buffer->on_post_resize = NULL;
 	buffer->offset = 0;
 	buffer->free = NULL;
+#ifdef BUF_DEBUG
 	buffer->is_ptr_queried = false;
+#endif /* BUF_DEBUG */
 	CALLTRACE_RETURN(buffer);
 }
 
@@ -526,7 +563,9 @@ function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size
 		buffer->on_pre_resize = NULL;
 		buffer->on_post_resize = NULL;
 		buffer->free = NULL;
+	#ifdef BUF_DEBUG
 		buffer->is_ptr_queried = false;
+	#endif /* BUF_DEBUG */
 	}
 	if((capacity > 0) || (offset > 0))
 	{
@@ -648,6 +687,17 @@ function_signature(void, buf_resize, BUFFER* buffer, buf_ucount_t new_capacity)
 		buffer->element_count = new_capacity;
 	buffer->capacity = new_capacity;
 	WARN_IF_PTR_QUERIED(buffer);
+	CALLTRACE_END();
+}
+
+function_signature(void, BUFensure_capacity, buf_ucount_t min_capacity) { CALLTRACE_BEGIN(); buf_ensure_capacity(binded_buffer, min_capacity); CALLTRACE_END(); }
+function_signature(void, buf_ensure_capacity, BUFFER* buffer, buf_ucount_t min_capacity)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	if(min_capacity <= buf_get_capacity(buffer))
+		CALLTRACE_RETURN();
+	buf_resize(buffer, min_capacity);
 	CALLTRACE_END();
 }
 
