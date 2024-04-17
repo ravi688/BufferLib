@@ -1381,7 +1381,7 @@ BUF_API void buf_s32_print(void* value, void* user_data)
 
 BUF_API void buf_s64_print(void* value, void* user_data)
 {
-	printf("%d ", *(const int64_t*)value);
+	printf("%ld ", *(const int64_t*)value);
 }
 
 BUF_API void buf_u8_print(void* value, void* user_data)
@@ -1396,7 +1396,7 @@ BUF_API void buf_u16_print(void* value, void* user_data)
 
 BUF_API void buf_u32_print(void* value, void* user_data)
 {
-	printf("%lu ", *(const uint32_t*)value);
+	printf("%u ", *(const uint32_t*)value);
 }
 
 BUF_API void buf_u64_print(void* value, void* user_data)
