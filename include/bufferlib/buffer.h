@@ -426,6 +426,10 @@ typedef COUNT_TYPE buf_count_t;
 #define LIST_GET_COUNT() BUFget_element_count()
 #define LIST_GET_DATA(type) ((type*)BUFget_ptr())
 
+typedef void* (*buf_malloc_t)(buf_ucount_t size, void* user_data);
+typedef void (*buf_free_t)(void* ptr, void* user_data);
+typedef void* (*buf_realloc_t)(void* old_ptr, buf_ucount_t size, void* user_data);
+
 typedef struct BUFFER
 {
 	void* bytes;
@@ -438,6 +442,10 @@ typedef struct BUFFER
 	void (*on_post_resize)(void);
 	void (*on_pre_resize)(void);
 	void (*free)(void*);					//TODO: add a version number to this added
+	buf_malloc_t mem_malloc;
+	buf_free_t mem_free;
+	buf_realloc_t mem_realloc;
+	void* user_data;
 	bool is_auto_managed;
 	#ifdef BUF_DEBUG
 	/* true after calling buf_*_ptr_*() set of functions, it is used to warn about pointer being invalidated after buffer resize */
@@ -455,7 +463,9 @@ BUF_API function_signature_void(void, BUFunbind);
 BUF_API function_signature_void(void, BUFlog);
 BUF_API function_signature(void, BUFtraverse_elements, buf_ucount_t start, buf_ucount_t end, void (*func)(void* /*element ptr*/, void* /*args ptr*/), void* args);
 BUF_API function_signature_void(void, BUFfree);
+BUF_API function_signature(BUFFER*, BUFcreate_object_a, void* bytes, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data);
 BUF_API function_signature(BUFFER*, BUFcreate_object, void* bytes);
+BUF_API function_signature(BUFFER*, BUFcreate_a, BUFFER* buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data);
 BUF_API function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset);
 BUF_API function_signature_void(void, BUFfit);
 BUF_API function_signature(void, BUFpeek, void* out_value);
@@ -512,6 +522,7 @@ BUF_API function_signature(void, buf_reverseb, BUFFER* buffer, void* ptr_to_buff
 BUF_API function_signature(void, buf_log, BUFFER* buffer);
 BUF_API function_signature(void, buf_traverse_elements, BUFFER* buffer, buf_ucount_t start, buf_ucount_t end, void (*func)(void* /*element ptr*/, void* /*args ptr*/), void* args);
 BUF_API function_signature(void, buf_free, BUFFER* buffer);
+BUF_API function_signature(BUFFER, buf_create_a, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data);
 BUF_API function_signature(BUFFER, buf_create, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset);
 BUF_API function_signature(void, buf_fit, BUFFER* buffer);
 BUF_API function_signature(void, buf_peek, BUFFER* buffer, void* out_value);
@@ -567,6 +578,8 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define BUFreverseb(...) 										define_alias_function_macro(BUFreverseb, __VA_ARGS__)
 #define BUFbind(...) 												define_alias_function_macro(BUFbind, __VA_ARGS__)
 #define BUFcreate_object(...) 							define_alias_function_macro(BUFcreate_object, __VA_ARGS__)
+#define BUFcreate_object_a(...) 						define_alias_function_macro(BUFcreate_object_a, __VA_ARGS__)
+#define BUFcreate_a(...) 										define_alias_function_macro(BUFcreate_a, __VA_ARGS__)
 #define BUFcreate(...) 											define_alias_function_macro(BUFcreate, __VA_ARGS__)
 #define BUFget_at(...) 											define_alias_function_macro(BUFget_at, __VA_ARGS__)
 #define BUFset_at(...) 											define_alias_function_macro(BUFset_at, __VA_ARGS__)
@@ -626,6 +639,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define BUFget_buffer_object_size() 				define_alias_function_void_macro(BUFget_buffer_object_size)
 
 #define buf_reverseb(...) 									define_alias_function_macro(buf_reverseb, __VA_ARGS__)
+#define buf_create_a(...) 									define_alias_function_macro(buf_create_a, __VA_ARGS__)
 #define buf_create(...) 										define_alias_function_macro(buf_create, __VA_ARGS__)
 #define buf_get_at(...) 										define_alias_function_macro(buf_get_at, __VA_ARGS__)
 #define buf_set_at(...) 										define_alias_function_macro(buf_set_at, __VA_ARGS__)

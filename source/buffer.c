@@ -69,6 +69,30 @@ function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*on_pre_re
 	CALLTRACE_END();
 }
 
+static inline void* call_malloc(buffer_t* buffer, buf_ucount_t size)
+{
+	if(buffer->mem_malloc != NULL)
+		return buffer->mem_malloc(size, buffer->user_data);
+	return malloc(size);
+}
+
+static inline void call_free(buffer_t* buffer, void* ptr)
+{
+	if(buffer->mem_free != NULL)
+	{
+		buffer->mem_free(ptr, buffer->user_data);
+		return;
+	}
+	free(ptr);
+}
+
+static inline void* call_realloc(buffer_t* buffer, void* old_ptr, buf_ucount_t size)
+{
+	if(buffer->mem_realloc != NULL)
+		return buffer->mem_realloc(old_ptr, size, buffer->user_data);
+	return realloc(old_ptr, size);
+}
+
 function_signature(void, BUFpush_pseudo, buf_ucount_t count) { CALLTRACE_BEGIN(); buf_push_pseudo(binded_buffer, count); CALLTRACE_END(); }
 function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count)
 {
@@ -83,7 +107,7 @@ function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count)
 	if(buffer->capacity <= 0)
 	{
 		buffer->capacity = 1;
-		buffer->bytes = malloc(buffer->capacity * buffer->element_size);
+		buffer->bytes = call_malloc(buffer, buffer->capacity * buffer->element_size);
 		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
 	}
 	buf_ucount_t previous_capacity = buffer->capacity;
@@ -102,7 +126,7 @@ function_signature(void, buf_push_pseudo, BUFFER* buffer, buf_ucount_t count)
 		 	previous_capacity = buffer->capacity;
 			buffer->capacity = temp;
 		}
-		buffer->bytes = realloc(buffer->bytes , buffer->capacity * buffer->element_size);
+		buffer->bytes = call_realloc(buffer, buffer->bytes , buffer->capacity * buffer->element_size);
 		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
 		if(buffer->on_post_resize != NULL) (buffer->on_post_resize)();
 	}
@@ -149,7 +173,7 @@ function_signature(void, buf_insert_pseudo, BUFFER* buffer, buf_ucount_t index, 
 		buffer->capacity <<= 1;
 	if(buffer->capacity > previous_capacity)
 	{
-		buffer->bytes = realloc(buffer->bytes, (buffer->element_size + count) * buffer->capacity);
+		buffer->bytes = call_realloc(buffer, buffer->bytes, (buffer->element_size + count) * buffer->capacity);
 		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
 	}
 
@@ -181,7 +205,7 @@ function_signature(void, buf_insert_pseudo, BUFFER* buffer, buf_ucount_t index, 
 			if(overwrite_prone_size > 2048)
 			{
 				log_wrn("Overwrite prone data is greater than 2 KB, allocating the memory in the heap");
-				overwrite_prone_data = malloc(overwrite_prone_size);
+				overwrite_prone_data = call_malloc(buffer, overwrite_prone_size);
 			}
 			else if(overwrite_prone_size > 0)
 				overwrite_prone_data = alloca(overwrite_prone_size);
@@ -197,7 +221,7 @@ function_signature(void, buf_insert_pseudo, BUFFER* buffer, buf_ucount_t index, 
 				memcpy(dst + count * buffer->element_size, overwrite_prone_data, overwrite_prone_size);
 
 			if(overwrite_prone_size > 2048)
-				free(overwrite_prone_data);
+				call_free(buffer, overwrite_prone_data);
 			/* else any memory allocated on the stack automatically freed after the function returns */
 	}
 
@@ -414,12 +438,12 @@ function_signature(void, buf_free, BUFFER* buffer)
 		buf_traverse_elements(buffer, 0, buf_get_element_count(buffer)- 1, (void (*)(void*, void*))(buffer->free), NULL);
 	if(buffer->bytes != NULL)
 	{
-		free(buffer->bytes);
+		call_free(buffer, buffer->bytes);
 		buffer->bytes == NULL;
 	}
 
   if(buffer->info & HEAP_ALLOCATED_OBJECT)
-  { buffer->info = 0x00; free(buffer) ; }
+  { buffer->info = 0x00; call_free(buffer, buffer); }
 	buffer = NULL;
 	CALLTRACE_END();
 }
@@ -513,12 +537,33 @@ function_signature(void, buf_set_on_free, BUFFER* buffer, void (*free)(void*))
 	CALLTRACE_END();
 }
 
+function_signature(BUFFER, buf_create_a, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data)
+{
+	CALLTRACE_BEGIN();
+	BUFFER buffer;
+	BUFcreate_object_a(&buffer, _malloc, _free, _realloc, user_data);
+	BUFcreate_a(&buffer, element_size, capacity, offset, _malloc, _free, _realloc, user_data);
+	CALLTRACE_RETURN(buffer);
+}
+
 function_signature(BUFFER, buf_create, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset)
 {
 	CALLTRACE_BEGIN();
 	BUFFER buffer;
 	BUFcreate_object(&buffer);
 	BUFcreate(&buffer, element_size, capacity, offset);
+	CALLTRACE_RETURN(buffer);
+}
+
+function_signature(BUFFER*, BUFcreate_object_a, void* bytes, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data)
+{
+	CALLTRACE_BEGIN();
+	BUFcreate_object(bytes);
+	BUFFER* buffer = bytes;
+	buffer->mem_malloc = _malloc;
+	buffer->mem_free = _free;
+	buffer->mem_realloc = _realloc;
+	buffer->user_data = user_data;
 	CALLTRACE_RETURN(buffer);
 }
 
@@ -540,13 +585,17 @@ function_signature(BUFFER*, BUFcreate_object, void* bytes)
 	buffer->on_post_resize = NULL;
 	buffer->offset = 0;
 	buffer->free = NULL;
+	buffer->mem_malloc = NULL;
+	buffer->mem_free = NULL;
+	buffer->mem_realloc = NULL;
+	buffer->user_data = NULL;
 #ifdef BUF_DEBUG
 	buffer->is_ptr_queried = false;
 #endif /* BUF_DEBUG */
 	CALLTRACE_RETURN(buffer);
 }
 
-function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset)
+function_signature(BUFFER*, BUFcreate_a, BUFFER* buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data)
 {
 	CALLTRACE_BEGIN();
 	GOOD_ASSERT(((int64_t)element_size) > 0, "element_size cannot be negative or zero");
@@ -554,7 +603,7 @@ function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size
 	GOOD_ASSERT(((int64_t)offset) >= 0, "offset cannot be negative");
 	if(buffer == NULL)
 	{
-		buffer = malloc(sizeof(BUFFER));
+		buffer = (_malloc != NULL) ? _malloc(sizeof(BUFFER), user_data) : malloc(sizeof(BUFFER));
 		GOOD_ASSERT(buffer != NULL, "Memory Allocation Failure Exception");
 		buffer->info = 0x00;
 		buffer->info |= HEAP_ALLOCATED_OBJECT;
@@ -563,13 +612,18 @@ function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size
 		buffer->on_pre_resize = NULL;
 		buffer->on_post_resize = NULL;
 		buffer->free = NULL;
+		buffer->mem_malloc = _malloc;
+		buffer->mem_free = _free;
+		buffer->mem_realloc = _realloc;
+		buffer->user_data = user_data;
 	#ifdef BUF_DEBUG
 		buffer->is_ptr_queried = false;
 	#endif /* BUF_DEBUG */
 	}
 	if((capacity > 0) || (offset > 0))
 	{
-		buffer->bytes = (void*)malloc(element_size * capacity + offset);
+		buf_ucount_t alloc_size = element_size * capacity + offset;
+		buffer->bytes = (void*)((_malloc != NULL) ? _malloc(alloc_size, user_data) : malloc(alloc_size));
 		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
 	}
 	else
@@ -579,6 +633,12 @@ function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size
 	buffer->element_count = 0;
 	buffer->offset = offset;
 	CALLTRACE_RETURN(buffer);
+}
+
+function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset)
+{
+	CALLTRACE_BEGIN();
+	CALLTRACE_RETURN(BUFcreate_a(buffer, element_size, capacity, offset, NULL, NULL, NULL, NULL));
 }
 
 function_signature(void, BUFget_at, buf_ucount_t index, void* out_value) { CALLTRACE_BEGIN(); buf_get_at(binded_buffer, index, out_value); CALLTRACE_END(); }
@@ -658,7 +718,7 @@ function_signature(void, buf_resize, BUFFER* buffer, buf_ucount_t new_capacity)
 		CALLTRACE_RETURN();
 	buf_ucount_t new_buffer_size = new_capacity * buffer->element_size + buffer->offset;
 	buf_ucount_t buffer_size = buffer->capacity * buffer->element_size + buffer->offset;
-	void* new_buffer = malloc(new_buffer_size);
+	void* new_buffer = call_malloc(buffer, new_buffer_size);
 	GOOD_ASSERT(new_buffer != NULL, "Failed to allocate memory");
 	if(new_buffer_size > buffer_size)
 
@@ -681,7 +741,7 @@ function_signature(void, buf_resize, BUFFER* buffer, buf_ucount_t new_capacity)
 		memcpy(new_buffer + new_buffer_size - buffer->offset, buffer->bytes + buffer_size - buffer->offset, buffer->offset);
 	}
 	if(buffer->bytes != NULL)
-		free(buffer->bytes);
+		call_free(buffer, buffer->bytes);
 	buffer->bytes = new_buffer;
 	if((new_buffer_size < buffer_size) && (buffer->element_count >= buffer->capacity))
 		buffer->element_count = new_capacity;
@@ -779,7 +839,7 @@ function_signature(void, buf_insert_at, BUFFER* buffer, buf_ucount_t index , voi
 		buffer->capacity <<= 1;
 	if(buffer->capacity > previous_capacity)
 	{
-		buffer->bytes = realloc(buffer->bytes, buffer->element_size * buffer->capacity);
+		buffer->bytes = call_realloc(buffer, buffer->bytes, buffer->element_size * buffer->capacity);
 		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
 	}
 
@@ -896,7 +956,7 @@ function_signature(void, buf_fit, BUFFER* buffer)
 	//TODO: Replace this with BUFresize(binded_buffer->element_count)
 	check_pre_condition(buffer);
 	GOOD_ASSERT(buffer->element_count > 0, "Buffer is Empty!");
-	buffer->bytes =  realloc(buffer->bytes , buffer->element_count * buffer->element_size);
+	buffer->bytes = call_realloc(buffer, buffer->bytes , buffer->element_count * buffer->element_size);
 	GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
 	buffer->capacity = buffer->element_count;
 	WARN_IF_PTR_QUERIED(buffer);
