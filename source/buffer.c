@@ -940,7 +940,8 @@ function_signature(bool, buf_remove, BUFFER* buffer, void* object, bool (*compar
 	{
 		if(comparer(object, cursor))
 		{
-			memcpy(cursor, cursor + buffer->element_size, (buffer->element_count - i - 1) * buffer->element_size);
+			/* NOTICE: do not use memcpy here, as overlapping can't be handled by memcpy */
+			memmove(cursor, cursor + buffer->element_size, (buffer->element_count - i - 1) * buffer->element_size);
 			memset(buf_peek_ptr(buffer), 0, buffer->element_size);
 			--(buffer->element_count);
 			CALLTRACE_RETURN(true);
