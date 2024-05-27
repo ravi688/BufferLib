@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <inttypes.h> /* for PRI* macros */
 
 #ifdef log_fetal_error
 #	undef log_fetal_error
@@ -1385,42 +1386,42 @@ BUF_API void buf_ptr_print(void* value, void* user_data)
 
 BUF_API void buf_s8_print(void* value, void* user_data)
 {
-	printf("%d ", *(const int8_t*)value);
+	printf("%" PRIi8, *(const int8_t*)value);
 }
 
 BUF_API void buf_s16_print(void* value, void* user_data)
 {
-	printf("%d ", *(const int16_t*)value);
+	printf("%" PRIi16, *(const int16_t*)value);
 }
 
 BUF_API void buf_s32_print(void* value, void* user_data)
 {
-	printf("%d ", *(const int32_t*)value);
+	printf("%" PRIi32, *(const int32_t*)value);
 }
 
 BUF_API void buf_s64_print(void* value, void* user_data)
 {
-	printf("%ld ", *(const int64_t*)value);
+	printf("%" PRIi64, *(const int64_t*)value);
 }
 
 BUF_API void buf_u8_print(void* value, void* user_data)
 {
-	printf("%u ", *(const uint8_t*)value);
+	printf("%" PRIu8, *(const uint8_t*)value);
 }
 
 BUF_API void buf_u16_print(void* value, void* user_data)
 {
-	printf("%u ", *(const uint16_t*)value);
+	printf("%" PRIu16, *(const uint16_t*)value);
 }
 
 BUF_API void buf_u32_print(void* value, void* user_data)
 {
-	printf("%u ", *(const uint32_t*)value);
+	printf("%" PRIu32, *(const uint32_t*)value);
 }
 
 BUF_API void buf_u64_print(void* value, void* user_data)
 {
-	printf("%lu ", *(const uint64_t*)value);
+	printf("%" PRIu64, *(const uint64_t*)value);
 }
 
 BUF_API void buf_float_print(void* value, void* user_data)
