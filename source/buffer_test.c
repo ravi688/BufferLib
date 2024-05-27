@@ -20,7 +20,7 @@
 #define GET_AT(index, stride, ptr) ((void*)(ptr) + (stride) * (index))
 #define SIZEOF_ARRAY(array) (sizeof(array) / sizeof(array[0]))
 
-static void print_char(void* value, void* args) { printf("%c ", *(char*)value); }
+__attribute__((unused)) static void print_char(void* value, void* args) { printf("%c ", *(char*)value); }
 static void print_int(void* value, void* args) { printf("%d ", *(int*)value); }
 
 TESTED
@@ -103,6 +103,7 @@ void* test_BUFgetptr_at(buf_ucount_t index, bool (*compare)(void*, void*), bool*
 	}
 
 	free(temp);
+	return BUFget_ptr_at(index);
 }
 TESTED
 void test_BUFfit(bool* out_result)
@@ -734,7 +735,7 @@ bool BUFstart_testing(BUFFERTest* test)
 
 	/*--------------------BUFpeek_ptr------------------------*/
 	LOG_TEST(test_count, "BUFpeek_ptr"); test_count++; result = true;
-	void* ptr = test_BUFpeek_ptr(test->equal, &result);
+	__attribute__((unused)) void* ptr = test_BUFpeek_ptr(test->equal, &result);
 	LOG_RESULT(result);
 	/*-------------------------------------------------------*/
 
@@ -769,7 +770,6 @@ bool BUFstart_testing(BUFFERTest* test)
 	void* temp_ptr = malloc(10 * BUFget_element_size());
 	for(int i = 0; i < 10; i++)
 		test_BUFpop(GET_AT(9 - i, BUFget_element_size(), temp_ptr), test->equal, &result);
-	buf_ucount_t* values = temp_ptr;
 	bool result0 = true;
 	for(int i = 0; i < 10; i++)
 	{

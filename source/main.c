@@ -98,7 +98,7 @@ int main()
 	// 	printf("Not found: %f\n", value);
 
 	BUFlog();
-	float* array = BUFget_ptr();
+	__attribute__((unused)) float* array = BUFget_ptr();
 
 	for(int i = 0; i < BUFget_element_count(); i++)
 		printf("%f ", BUFget_value_at_typeof(float, i));

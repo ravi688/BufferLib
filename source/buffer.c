@@ -413,16 +413,16 @@ function_signature(void, buf_traverse_elements, BUFFER* buffer, buf_ucount_t sta
 	CALLTRACE_END();
 }
 
-function_signature_void(static bool, BUFis_stack_allocated) { CALLTRACE_BEGIN();  CALLTRACE_RETURN(buf_is_stack_allocated(binded_buffer)); }
-function_signature(static bool, buf_is_stack_allocated, BUFFER* buffer)
+__attribute__((unused)) function_signature_void(static bool, BUFis_stack_allocated) { CALLTRACE_BEGIN();  CALLTRACE_RETURN(buf_is_stack_allocated(binded_buffer)); }
+__attribute__((unused)) function_signature(static bool, buf_is_stack_allocated, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
 	CALLTRACE_RETURN((buffer->info & STACK_ALLOCATED_OBJECT) == STACK_ALLOCATED_OBJECT);
 }
 
-function_signature_void(static bool, BUFis_heap_allocated) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_is_heap_allocated(binded_buffer)); }
-function_signature(static bool, buf_is_heap_allocated, BUFFER* buffer)
+__attribute__((unused)) function_signature_void(static bool, BUFis_heap_allocated) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_is_heap_allocated(binded_buffer)); }
+__attribute__((unused)) function_signature(static bool, buf_is_heap_allocated, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
@@ -439,7 +439,7 @@ function_signature(void, buf_free, BUFFER* buffer)
 	if(buffer->bytes != NULL)
 	{
 		call_free(buffer, buffer->bytes);
-		buffer->bytes == NULL;
+		buffer->bytes = NULL;
 	}
 
   if(buffer->info & HEAP_ALLOCATED_OBJECT)
@@ -873,7 +873,6 @@ function_signature(bool, buf_remove_at_noshift, BUFFER* buffer, buf_ucount_t ind
 		memcpy(out_value , buffer->bytes + index * buffer->element_size , buffer->element_size) ;
 	if(buf_is_auto_managed(buffer))
 	{
-		BUFFER* previous_buffer = buffer;
 		void* ptr = buffer->bytes + index * buffer->element_size;
 		if(buf_find_index_of(buffer->auto_managed_empty_blocks, &ptr, ptr_comparer) == BUF_INVALID_INDEX) /*if ptr is not found in the auto_managed_empty_blocks BUFFER*/
 			buf_push(buffer->auto_managed_empty_blocks, &ptr);
