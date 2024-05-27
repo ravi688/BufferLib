@@ -421,6 +421,17 @@ function_signature(void, buf_free, BUFFER* buffer)
 	CALLTRACE_END();
 }
 
+function_signature_void(void, BUFfree_except_data) { CALLTRACE_BEGIN(); buf_free_except_data(binded_buffer); CALLTRACE_END(); }
+function_signature(void, buf_free_except_data, BUFFER* buffer)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+  if(buffer->info & HEAP_ALLOCATED_OBJECT)
+  { buffer->info = 0x00; call_free(buffer, buffer); }
+	buffer = NULL;
+	CALLTRACE_END();
+}
+
 function_signature_void(BUFFER*, BUFget_clone)
 {
 	CALLTRACE_BEGIN();
