@@ -159,77 +159,50 @@ function_signature(void, buf_pop_pseudo, BUFFER* buffer, buf_ucount_t count)
 	CALLTRACE_END();
 }
 
-function_signature(void, BUFinsert_pseudo, buf_ucount_t index, buf_ucount_t count) { CALLTRACE_BEGIN(); buf_insert_pseudo(binded_buffer, index, count); CALLTRACE_END(); }
-function_signature(void, buf_insert_pseudo, BUFFER* buffer, buf_ucount_t index, buf_ucount_t count)
+
+#define buf_insert_pseudo_uninitialized(...)	define_alias_function_macro(buf_insert_pseudo_uninitialized, __VA_ARGS__)
+function_signature(static void, buf_insert_pseudo_uninitialized, BUFFER* buffer, buf_ucount_t index, buf_ucount_t count)
 {
 	CALLTRACE_BEGIN();
 	GOOD_ASSERT(buffer != NULL, "Binded Buffer Is NULL Exception");
 	GOOD_ASSERT(index <= buffer->element_count,"Buffer Overflow Exception");
 
+	// calculate the number of elements to shift towards right
+	buf_ucount_t num_shift_elements = buffer->element_count - index;
+
+	// increase the element_count by count
+	buffer->element_count += count;
+
 	// if space is insufficient then re-allocate
 	buf_ucount_t previous_capacity = buffer->capacity;
 	buffer->capacity = (buffer->capacity == 0) ? 1 : buffer->capacity;
-	while(buffer->capacity < (buffer->element_count + count))
+	while(buffer->capacity < buffer->element_count)
 		buffer->capacity <<= 1;
 	if(buffer->capacity > previous_capacity)
 	{
-		buffer->bytes = call_realloc(buffer, buffer->bytes, (buffer->element_size + count) * buffer->capacity);
+		buffer->bytes = call_realloc(buffer, buffer->bytes, buffer->element_size * buffer->capacity);
 		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
 	}
 
-	/*
-		There are number of elements which are prone to be overwritten if we just directly copy from src to dst, as
-		both would overlap. We need to somehow avoid overwriting the those values (staring from (insert index + insert count)).
-
-		There are two methods of doing this:
-
-		First, we can shift the elements by one stride (element_size) at a time for the 'number of elements to be shifted' times, to the right
-		But that would result in O(num_shift_elements * insert_count) time complexity -- which is not much efficient.
-
-		Second, we can allocate a temporary buffer which would preserve the prone to overwrite data (starting from (inset index + insert count)
-		up to 'element_count'). And then we can directly copy the elements staring from 'insert index' (upto 'insert count')
-		to 'insert index + insert count'. After that, copy the data from the temporary buffer to the memory starting at 'insert index + 2 * insert count'
-		upto 'element_count'.
-
-		In the second, if the size requirements for the temporary buffer is very large, greater than the permitted program stack size,
-		then we would have to allocate the memory in the heap. A warning should be issued as the user might be expecting no heap allocation.
-	*/
-
-	void* src = buffer->bytes + index * buffer->element_size;
-
-	if(index < buffer->element_count)
+	// shift the elements to the right
+	void* dst_ptr = buffer->bytes + (buffer->element_count - 1) * buffer->element_size;
+	uint8_t offset = buffer->element_size * count;
+	while(num_shift_elements)
 	{
-			/* allocate temporary buffer to store the overwrite prone data */
-			buf_ucount_t overwrite_prone_size = ((index + count) > buffer->element_count) ? 0 : (buffer->element_count - (index + count)) * buffer->element_size;
-			void* overwrite_prone_data = NULL;
-			if(overwrite_prone_size > 2048)
-			{
-				log_wrn("Overwrite prone data is greater than 2 KB, allocating the memory in the heap");
-				overwrite_prone_data = call_malloc(buffer, overwrite_prone_size);
-			}
-			else if(overwrite_prone_size > 0)
-				overwrite_prone_data = alloca(overwrite_prone_size);
-
-			/* copy the overwrite prone data to the temporary buffer before initiating any copy operation to it. */
-			if(overwrite_prone_size > 0)
-				memcpy(overwrite_prone_data, buffer->bytes + (index + count) * buffer->element_size, overwrite_prone_size);
-
-			/* shift the elements to the right via copy */
-			void* dst = buffer->bytes + (index + count) * buffer->element_size;
-			memcpy(dst, src, count * buffer->element_size);
-			if(overwrite_prone_size > 0)
-				memcpy(dst + count * buffer->element_size, overwrite_prone_data, overwrite_prone_size);
-
-			if(overwrite_prone_size > 2048)
-				call_free(buffer, overwrite_prone_data);
-			/* else any memory allocated on the stack automatically freed after the function returns */
+		memcpy(dst_ptr , dst_ptr - offset, buffer->element_size);
+		dst_ptr -= buffer->element_size;
+		--num_shift_elements;
 	}
 
+	CALLTRACE_END();
+}
+
+function_signature(void, BUFinsert_pseudo, buf_ucount_t index, buf_ucount_t count) { CALLTRACE_BEGIN(); buf_insert_pseudo(binded_buffer, index, count); CALLTRACE_END(); }
+function_signature(void, buf_insert_pseudo, BUFFER* buffer, buf_ucount_t index, buf_ucount_t count)
+{
+	buf_insert_pseudo_uninitialized(buffer, index, count);
 	/* set the inserted elements to zero */
-	memset(src, 0, count * buffer->element_size);
-
-	buffer->element_count += count;
-
+	memset(buf_get_ptr_at(buffer, index), 0, count * buffer->element_size);
 	CALLTRACE_END();
 }
 
@@ -826,35 +799,10 @@ function_signature(void, buf_insert_at, BUFFER* buffer, buf_ucount_t index , voi
 	GOOD_ASSERT(buffer != NULL, "Binded Buffer Is NULL Exception");
 	GOOD_ASSERT(index <= buffer->element_count,"Buffer Overflow Exception");
 
-	// calculate the number of elements to shift towards right
-	buf_ucount_t num_shift_elements = buffer->element_count - index;
-
-	// increase the element_count by count
-	buffer->element_count += 1;
-
-	// if space is insufficient then re-allocate
-	buf_ucount_t previous_capacity = buffer->capacity;
-	buffer->capacity = (buffer->capacity == 0) ? 1 : buffer->capacity;
-	while(buffer->capacity < buffer->element_count)
-		buffer->capacity <<= 1;
-	if(buffer->capacity > previous_capacity)
-	{
-		buffer->bytes = call_realloc(buffer, buffer->bytes, buffer->element_size * buffer->capacity);
-		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
-	}
-
-	// shift the elements to the right
-	void* dst_ptr = buffer->bytes + (buffer->element_count - 1) * buffer->element_size;
-	uint8_t offset = buffer->element_size * 1;
-	while(num_shift_elements)
-	{
-		memcpy(dst_ptr , dst_ptr - offset, buffer->element_size);
-		dst_ptr -= buffer->element_size;
-		--num_shift_elements;
-	}
+	buf_insert_pseudo_uninitialized(buffer, index, 1);
 
 	// copy in_value to the inserted block
-	memcpy(buffer->bytes + index * buffer->element_size, in_value, buffer->element_size);
+	memcpy(buf_get_ptr_at(buffer, index), in_value, buffer->element_size);
 
 	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
