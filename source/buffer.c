@@ -1023,9 +1023,12 @@ function_signature(void, buf_vprintf, BUFFER* buffer, char* stage_buffer, const 
 	else
 	{
 		buf_ucount_t offset = buf_get_element_count(buffer);
-		buf_push_pseudo(buffer, 512);
-		vsprintf(buf_get_ptr(buffer) + offset, format_string, args);
-		buf_set_element_count(buffer, offset + strlen(buf_get_ptr_at_typeof(buffer, char, offset)) + 1);
+		va_list args2;
+		va_copy(args2, args);
+		buf_ucount_t count = vsnprintf(NULL, 0, format_string, args);
+		buf_push_pseudo(buffer, count + 1);
+		buf_ucount_t result = vsnprintf(buf_get_ptr(buffer) + offset, count + 1, format_string, args2);
+		GOOD_ASSERT(result == count, "Fetal error while formating string");
 	}
 	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
