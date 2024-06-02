@@ -853,7 +853,7 @@ function_signature(bool, buf_remove_at, BUFFER* buffer, buf_ucount_t index , voi
 		memcpy(out_value , buffer->bytes + index * buffer->element_size , buffer->element_size);
 
 	void* dst_ptr = buffer->bytes + index * buffer->element_size;
-	if(index <= buffer->element_count)
+	if(index < buffer->element_count)
 	{
 		buf_ucount_t num_shift_elements = (buffer->element_count - index) ;
 		while(num_shift_elements > 0)
