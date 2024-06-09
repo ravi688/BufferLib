@@ -478,6 +478,7 @@ BUF_API function_signature(void, BUFpushv, void* in_value, buf_ucount_t count);
 BUF_API function_signature(bool, BUFremove, void* object, bool (*comparer)(void*, void*));
 BUF_API function_signature(bool, BUFremove_noshift, void* object, bool (*comparer)(void*, void*));
 BUF_API function_signature(void, BUFclear, void* clear_value);
+BUF_API function_signature(void, BUFclear_fast);
 BUF_API function_signature(bool, BUFremove_at_noshift, buf_ucount_t index , void* out_value);
 BUF_API function_signature(bool, BUFremove_at, buf_ucount_t index , void* out_value);
 BUF_API function_signature(void, BUFinsert_at, buf_ucount_t index , void* in_value);
@@ -536,6 +537,7 @@ BUF_API function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_
 BUF_API function_signature(bool, buf_remove, BUFFER* buffer, void* object, bool (*comparer)(void*, void*));
 BUF_API function_signature(bool, buf_remove_noshift, BUFFER* buffer, void* object, bool (*comparer)(void*, void*));
 BUF_API function_signature(void, buf_clear, BUFFER* buffer, void* clear_value);
+BUF_API function_signature(void, buf_clear_fast, BUFFER* buffer);
 BUF_API function_signature(bool, buf_remove_at_noshift, BUFFER* buffer, buf_ucount_t index , void* out_value);
 BUF_API function_signature(bool, buf_remove_at, BUFFER* buffer, buf_ucount_t index , void* out_value);
 BUF_API function_signature(void, buf_insert_at, BUFFER* buffer, buf_ucount_t index , void* in_value);
@@ -593,6 +595,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define BUFremove(...) 											define_alias_function_macro(BUFremove, __VA_ARGS__)
 #define BUFremove_noshift(...) 							define_alias_function_macro(BUFremove_noshift, __VA_ARGS__)
 #define BUFclear(...) 											define_alias_function_macro(BUFclear, __VA_ARGS__)
+#define BUFclear_fast(...) 									define_alias_function_macro(BUFclear_fast, __VA_ARGS__)
 #define BUFremove_at_noshift(...) 					define_alias_function_macro(BUFremove_at_noshift, __VA_ARGS__)
 #define BUFremove_at(...) 									define_alias_function_macro(BUFremove_at, __VA_ARGS__)
 #define BUFinsert_at(...) 									define_alias_function_macro(BUFinsert_at, __VA_ARGS__)
@@ -654,6 +657,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_remove(...) 										define_alias_function_macro(buf_remove, __VA_ARGS__)
 #define buf_remove_noshift(...) 						define_alias_function_macro(buf_remove_noshift, __VA_ARGS__)
 #define buf_clear(...) 											define_alias_function_macro(buf_clear, __VA_ARGS__)
+#define buf_clear_fast(...) 								define_alias_function_macro(buf_clear_fast, __VA_ARGS__)
 #define buf_remove_at_noshift(...) 					define_alias_function_macro(buf_remove_at_noshift, __VA_ARGS__)
 #define buf_remove_at(...) 									define_alias_function_macro(buf_remove_at, __VA_ARGS__)
 #define buf_insert_at(...) 									define_alias_function_macro(buf_insert_at, __VA_ARGS__)
