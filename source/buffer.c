@@ -791,6 +791,15 @@ function_signature(void, buf_clear, BUFFER* buffer, void* clear_value)
  	CALLTRACE_END();
 }
 
+function_signature(void, BUFclear_fast, BUFFER* buffer) { CALLTRACE_BEGIN(); buf_clear_fast(binded_buffer); CALLTRACE_END(); }
+function_signature(void, buf_clear_fast, BUFFER* buffer)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	buffer->element_count = 0;
+	CALLTRACE_END();
+}
+
 function_signature(void, BUFinsert_at_noalloc, buf_ucount_t index , void* in_value , void* out_value) { CALLTRACE_BEGIN(); buf_insert_at_noalloc(binded_buffer, index, in_value, out_value); CALLTRACE_END(); }
 function_signature(void, buf_insert_at_noalloc, BUFFER* buffer, buf_ucount_t index , void* in_value , void* out_value)
 {
