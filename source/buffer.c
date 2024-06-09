@@ -791,7 +791,7 @@ function_signature(void, buf_clear, BUFFER* buffer, void* clear_value)
  	CALLTRACE_END();
 }
 
-function_signature(void, BUFclear_fast, BUFFER* buffer) { CALLTRACE_BEGIN(); buf_clear_fast(binded_buffer); CALLTRACE_END(); }
+function_signature_void(void, BUFclear_fast) { CALLTRACE_BEGIN(); buf_clear_fast(binded_buffer); CALLTRACE_END(); }
 function_signature(void, buf_clear_fast, BUFFER* buffer)
 {
 	CALLTRACE_BEGIN();
