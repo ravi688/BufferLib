@@ -664,6 +664,17 @@ function_signature(void, buf_set_at, BUFFER* buffer, buf_ucount_t index , void* 
 	CALLTRACE_END();
 }
 
+function_signature(void, BUFset_at_n, buf_ucount_t index , void* in_value, buf_ucount_t max_size) { CALLTRACE_BEGIN(); buf_set_at_n(binded_buffer, index, in_value, max_size); CALLTRACE_END(); }
+function_signature(void, buf_set_at_n, BUFFER* buffer, buf_ucount_t index , void* in_value, buf_ucount_t max_size)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	GOOD_ASSERT(index < buffer->element_count,"Index Out of Range Exception");
+	GOOD_ASSERT(max_size <= buffer->element_size, "Overwrite to next element exception");
+	memcpy(buffer->bytes + index * buffer->element_size, in_value , max_size);
+	CALLTRACE_END();
+}
+
 function_signature_void(void*, BUFget_offset_bytes) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_get_offset_bytes(binded_buffer)); }
 function_signature(void*, buf_get_offset_bytes, BUFFER* buffer)
 {
@@ -994,11 +1005,8 @@ function_signature(void, buf_push, BUFFER* buffer, void* in_value)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	buf_ucount_t new_capacity = (buffer->capacity == 0) ? 1 : buffer->capacity;
-	++(buffer->element_count);
-	while(new_capacity < buffer->element_count)
-		new_capacity *= 2;
-	buf_resize(buffer, new_capacity);
+	buf_ensure_capacity(buffer, buffer->element_count + 1);
+	buffer->element_count += 1;
 	buf_set_at(buffer, buffer->element_count - 1, in_value);
 	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
@@ -1009,13 +1017,21 @@ function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_ucount_t
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	buf_ucount_t new_capacity = (buffer->capacity == 0) ? 1 : buffer->capacity;
+	buf_ensure_capacity(buffer, buffer->element_count + count);
 	buffer->element_count += count;
-	while(new_capacity < buffer->element_count)
-		new_capacity *= 2;
-	buf_resize(buffer, new_capacity);
 	for(buf_ucount_t i = 0; i < count; i++, in_value += buffer->element_size)
 		buf_set_at(buffer, buffer->element_count - count + i, in_value);
+	WARN_IF_PTR_QUERIED(buffer);
+	CALLTRACE_END();
+}
+
+function_signature(void, buf_push_n, BUFFER* buffer, void* in_value, buf_ucount_t max_size)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	buf_ensure_capacity(buffer, buffer->element_count + 1);
+	buffer->element_count += 1;
+	buf_set_at_n(buffer, buffer->element_count - 1, in_value, max_size);
 	WARN_IF_PTR_QUERIED(buffer);
 	CALLTRACE_END();
 }

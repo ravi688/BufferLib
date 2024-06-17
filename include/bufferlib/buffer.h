@@ -533,6 +533,7 @@ BUF_API function_signature(void*, buf_peek_ptr, BUFFER* buffer);
 BUF_API function_signature(void, buf_pop, BUFFER* buffer, void* out_value);
 BUF_API function_signature(void*, buf_pop_get_ptr, BUFFER* buffer);
 BUF_API function_signature(void, buf_push, BUFFER* buffer, void* in_value);
+BUF_API function_signature(void, buf_push_n, BUFFER* buffer, void* in_value, buf_ucount_t max_size);
 BUF_API function_signature(void, buf_pushv, BUFFER* buffer, void* in_value, buf_ucount_t count);
 BUF_API function_signature(bool, buf_remove, BUFFER* buffer, void* object, bool (*comparer)(void*, void*));
 BUF_API function_signature(bool, buf_remove_noshift, BUFFER* buffer, void* object, bool (*comparer)(void*, void*));
@@ -544,6 +545,7 @@ BUF_API function_signature(void, buf_insert_at, BUFFER* buffer, buf_ucount_t ind
 BUF_API function_signature(void, buf_insert_at_noalloc, BUFFER* buffer, buf_ucount_t index , void* in_value , void* out_value);
 BUF_API function_signature(buf_ucount_t, buf_find_index_of, BUFFER* buffer, void* value, bool (*comparer)(void*, void*));
 BUF_API function_signature(void, buf_set_at, BUFFER* buffer, buf_ucount_t index , void* in_value);
+BUF_API function_signature(void, buf_set_at_n, BUFFER* buffer, buf_ucount_t index , void* in_value, buf_ucount_t max_size);
 BUF_API function_signature(void, buf_set_capacity, BUFFER* buffer, buf_ucount_t capacity);
 BUF_API function_signature(void, buf_set_ptr, BUFFER* buffer, void* ptr);
 BUF_API function_signature(void, buf_set_element_count, BUFFER* buffer, buf_ucount_t element_count);
@@ -649,11 +651,13 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_create(...) 										define_alias_function_macro(buf_create, __VA_ARGS__)
 #define buf_get_at(...) 										define_alias_function_macro(buf_get_at, __VA_ARGS__)
 #define buf_set_at(...) 										define_alias_function_macro(buf_set_at, __VA_ARGS__)
+#define buf_set_at_n(...) 									define_alias_function_macro(buf_set_at_n, __VA_ARGS__)
 #define buf_getptr_at(...) 									define_alias_function_macro(buf_getptr_at, __VA_ARGS__)
 #define buf_pop_get_ptr(...)  							define_alias_function_macro(buf_pop_get_ptr, __VA_ARGS__)
 #define buf_pop(...) 												define_alias_function_macro(buf_pop, __VA_ARGS__)
 #define buf_push(...) 											define_alias_function_macro(buf_push, __VA_ARGS__)
 #define buf_pushv(...) 											define_alias_function_macro(buf_pushv, __VA_ARGS__)
+#define buf_push_n(...) 										define_alias_function_macro(buf_push_n, __VA_ARGS__)
 #define buf_remove(...) 										define_alias_function_macro(buf_remove, __VA_ARGS__)
 #define buf_remove_noshift(...) 						define_alias_function_macro(buf_remove_noshift, __VA_ARGS__)
 #define buf_clear(...) 											define_alias_function_macro(buf_clear, __VA_ARGS__)
