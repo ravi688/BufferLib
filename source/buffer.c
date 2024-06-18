@@ -709,37 +709,39 @@ function_signature(void, buf_resize, BUFFER* buffer, buf_ucount_t new_capacity)
 {
 	CALLTRACE_BEGIN();
 	check_pre_condition(buffer);
-	GOOD_ASSERT(new_capacity != 0, "new_capacity == 0");
 	if(new_capacity == buffer->capacity)
 		CALLTRACE_RETURN();
 	buf_ucount_t new_buffer_size = new_capacity * buffer->element_size + buffer->offset;
 	buf_ucount_t buffer_size = buffer->capacity * buffer->element_size + buffer->offset;
-	void* new_buffer = call_malloc(buffer, new_buffer_size);
-	GOOD_ASSERT(new_buffer != NULL, "Failed to allocate memory");
-	if(new_buffer_size > buffer_size)
-
+	void* new_buffer = (new_buffer_size == 0) ? NULL : call_malloc(buffer, new_buffer_size);
+	GOOD_ASSERT((new_buffer_size == 0) || (new_buffer != NULL), "Memory Allocation Failure");
+	if(buffer->bytes != NULL)
 	{
-		if((buffer_size - buffer->offset) != 0)
-		//copy only the elments, excluding the offset
-		memcpy(new_buffer, buffer->bytes, buffer_size - buffer->offset);
-		if(buffer->offset != 0)
-		//copy the offset bytes at the end of the new buffer
-		memcpy(new_buffer + new_buffer_size - buffer->offset, buffer->bytes + buffer_size - buffer->offset, buffer->offset);
-		//set the intermediate bytes to zero
-		memset(new_buffer + buffer_size - buffer->offset, 0, new_buffer_size - buffer_size);
+		if(new_buffer_size > buffer_size)
+		{
+			if((buffer_size - buffer->offset) != 0)
+			//copy only the elments, excluding the offset
+			memcpy(new_buffer, buffer->bytes, buffer_size - buffer->offset);
+			if(buffer->offset != 0)
+			//copy the offset bytes at the end of the new buffer
+			memcpy(new_buffer + new_buffer_size - buffer->offset, buffer->bytes + buffer_size - buffer->offset, buffer->offset);
+			//set the intermediate bytes to zero
+			memset(new_buffer + buffer_size - buffer->offset, 0, new_buffer_size - buffer_size);
+		}
+		else if(new_buffer_size != 0)//if ((new_buffer_size != 0) && (new_buffer_size < buffer_size))
+		{
+			//copy only the elements, excluding the offset
+			memcpy(new_buffer, buffer->bytes, new_buffer_size - buffer->offset);
+			if(buffer->offset != 0)
+			//copy the offset bytes at the end of the new buffer
+			memcpy(new_buffer + new_buffer_size - buffer->offset, buffer->bytes + buffer_size - buffer->offset, buffer->offset);
+		}
 	}
-	else//if (new_buffer_size < buffer_size)
-	{
-		//copy only the elements, excluding the offset
-		memcpy(new_buffer, buffer->bytes, new_buffer_size - buffer->offset);
-		if(buffer->offset != 0)
-		//copy the offset bytes at the end of the new buffer
-		memcpy(new_buffer + new_buffer_size - buffer->offset, buffer->bytes + buffer_size - buffer->offset, buffer->offset);
-	}
+	else GOOD_ASSERT(buffer_size == 0, "buffer->bytes is NULL but buffer_size is not 0, something is very bad!");
 	if(buffer->bytes != NULL)
 		call_free(buffer, buffer->bytes);
 	buffer->bytes = new_buffer;
-	if((new_buffer_size < buffer_size) && (buffer->element_count >= buffer->capacity))
+	if(buffer->element_count >= new_capacity)
 		buffer->element_count = new_capacity;
 	buffer->capacity = new_capacity;
 	WARN_IF_PTR_QUERIED(buffer);
@@ -753,7 +755,11 @@ function_signature(void, buf_ensure_capacity, BUFFER* buffer, buf_ucount_t min_c
 	check_pre_condition(buffer);
 	if(min_capacity <= buf_get_capacity(buffer))
 		CALLTRACE_RETURN();
-	buf_resize(buffer, min_capacity);
+	buf_ucount_t capacity = buf_get_capacity(buffer);
+	if(capacity == 0) capacity = 1;
+	while(capacity < min_capacity)
+		capacity *= 2;
+	buf_resize(buffer, capacity);
 	CALLTRACE_END();
 }
 
