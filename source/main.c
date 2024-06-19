@@ -106,10 +106,19 @@ static void test_buf_resize()
 	_assert(buf_get_element_size(&b) == 4, "either buf_insert_at or buf_get_element_count is not working");
 	for(int i = 99; i >= 0; i--)
 		_assert(buf_get_at_typeof(&b, int, 99 - i) == i, "either buf_insert_at or buf_get_at_typeof is not working");
+	buf_insert_pseudo(&b, 43, 65);
+	_assert(buf_get_element_count(&b) == 165, "either buf_insert_at or buf_get_element_count is not working");
+	_assert(buf_get_ptr(&b) != NULL, "either buf_insert_at or buf_get_ptr is not working");
+	_assert(buf_get_capacity(&b) == 256, "either buf_insert_at or buf_get_capacity is not working");
+	_assert(buf_get_element_size(&b) == 4, "either buf_insert_at or buf_get_element_count is not working");
+	for(int i = 0; i < 43; i++)
+		_assert(buf_get_at_typeof(&b, int, i) == (99 - i), "either buf_insert_pseudo or buf_get_at_typeof is not working");
+	for(int i = 43; i < 100; i++)
+		_assert(buf_get_at_typeof(&b, int, i + 65) == (99 - i), "either buf_insert_pseudo or buf_get_at_typeof is not working");
 	buf_fit(&b);
-	_assert(buf_get_element_count(&b) == 100, "either buf_fit or buf_get_element_count is not working");
+	_assert(buf_get_element_count(&b) == 165, "either buf_fit or buf_get_element_count is not working");
 	_assert(buf_get_ptr(&b) != NULL, "either buf_fit or buf_get_ptr is not working");
-	_assert(buf_get_capacity(&b) == 100, "either buf_fit or buf_get_capacity is not working");
+	_assert(buf_get_capacity(&b) == 165, "either buf_fit or buf_get_capacity is not working");
 	_assert(buf_get_element_size(&b) == 4, "either buf_fit or buf_get_element_count is not working");
 	buf_free(&b);
 	puts("Following functions seem to be working:\n"
@@ -123,6 +132,7 @@ static void test_buf_resize()
 			"\tbuf_ensure_capacity\n"
 			"\tbuf_resize\n"
 			"\tbuf_insert_at\n"
+			"\tbuf_insert_pseudo\n"
 			"\tbuf_fit\n"
 			"\tbuf_free\n");
 }

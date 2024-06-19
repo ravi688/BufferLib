@@ -168,32 +168,17 @@ function_signature(static void, buf_insert_pseudo_uninitialized, BUFFER* buffer,
 	GOOD_ASSERT(buffer != NULL, "Binded Buffer Is NULL Exception");
 	GOOD_ASSERT(index <= buffer->element_count,"Buffer Overflow Exception");
 
-	// calculate the number of elements to shift towards right
-	buf_ucount_t num_shift_elements = buffer->element_count - index;
+	buf_ensure_capacity(buffer, buffer->element_count + count);
 
-	// increase the element_count by count
+	for(buf_ucount_t i = buffer->element_count; i > index; --i)
+	{
+		void* dst_ptr = buffer->bytes + (count + i - 1) * buffer->element_size;
+		void* src_ptr = dst_ptr - count * buffer->element_size;
+		memcpy(dst_ptr, src_ptr, buffer->element_size);
+	}
+
+	/* increase the element_count by count */
 	buffer->element_count += count;
-
-	// if space is insufficient then re-allocate
-	buf_ucount_t previous_capacity = buffer->capacity;
-	buffer->capacity = (buffer->capacity == 0) ? 1 : buffer->capacity;
-	while(buffer->capacity < buffer->element_count)
-		buffer->capacity <<= 1;
-	if(buffer->capacity > previous_capacity)
-	{
-		buffer->bytes = call_realloc(buffer, buffer->bytes, buffer->element_size * buffer->capacity);
-		GOOD_ASSERT(buffer->bytes != NULL, "Memory Allocation Failure Exception");
-	}
-
-	// shift the elements to the right
-	void* dst_ptr = buffer->bytes + (buffer->element_count - 1) * buffer->element_size;
-	uint8_t offset = buffer->element_size * count;
-	while(num_shift_elements)
-	{
-		memcpy(dst_ptr , dst_ptr - offset, buffer->element_size);
-		dst_ptr -= buffer->element_size;
-		--num_shift_elements;
-	}
 
 	CALLTRACE_END();
 }
