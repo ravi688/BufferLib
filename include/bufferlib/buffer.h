@@ -468,6 +468,7 @@ BUF_API function_signature(BUFFER*, BUFcreate_object_a, void* bytes, buf_malloc_
 BUF_API function_signature(BUFFER*, BUFcreate_object, void* bytes);
 BUF_API function_signature(BUFFER*, BUFcreate_a, BUFFER* buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data);
 BUF_API function_signature(BUFFER*, BUFcreate, BUFFER* buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset);
+BUF_API function_signature(BUFFER*, BUFcreate_m, BUFFER* buffer, void* ptr, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data);
 BUF_API function_signature_void(void, BUFfit);
 BUF_API function_signature(void, BUFpeek, void* out_value);
 BUF_API function_signature_void(void*, BUFpeek_ptr);
@@ -527,6 +528,10 @@ BUF_API function_signature(void, buf_free, BUFFER* buffer);
 BUF_API function_signature(void, buf_free_except_data, BUFFER* buffer);
 BUF_API function_signature(BUFFER, buf_create_a, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data);
 BUF_API function_signature(BUFFER, buf_create, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset);
+/* mapped variant of buf_create, it doesn't create a dynamically resized buffer 
+ * it only operates upon the already supplied memory pointed by 'ptr', so it can't be shrinked or expanded. 
+ * calling functions such as buf_fit, or buf_resize may throw assertion failure errors */
+BUF_API function_signature(BUFFER, buf_create_m, void* ptr, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data);
 BUF_API function_signature(void, buf_fit, BUFFER* buffer);
 BUF_API function_signature(void, buf_peek, BUFFER* buffer, void* out_value);
 BUF_API function_signature(void*, buf_peek_ptr, BUFFER* buffer);
@@ -587,6 +592,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define BUFcreate_object_a(...) 						define_alias_function_macro(BUFcreate_object_a, __VA_ARGS__)
 #define BUFcreate_a(...) 										define_alias_function_macro(BUFcreate_a, __VA_ARGS__)
 #define BUFcreate(...) 											define_alias_function_macro(BUFcreate, __VA_ARGS__)
+#define BUFcreate_m(...) 										define_alias_function_macro(BUFcreate_m, __VA_ARGS__)
 #define BUFget_at(...) 											define_alias_function_macro(BUFget_at, __VA_ARGS__)
 #define BUFset_at(...) 											define_alias_function_macro(BUFset_at, __VA_ARGS__)
 #define BUFgetptr_at(...) 									define_alias_function_macro(BUFgetptr_at, __VA_ARGS__)
@@ -649,6 +655,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_reverseb(...) 									define_alias_function_macro(buf_reverseb, __VA_ARGS__)
 #define buf_create_a(...) 									define_alias_function_macro(buf_create_a, __VA_ARGS__)
 #define buf_create(...) 										define_alias_function_macro(buf_create, __VA_ARGS__)
+#define buf_create_m(...)										define_alias_function_macro(buf_create_m, __VA_ARGS__)
 #define buf_get_at(...) 										define_alias_function_macro(buf_get_at, __VA_ARGS__)
 #define buf_set_at(...) 										define_alias_function_macro(buf_set_at, __VA_ARGS__)
 #define buf_set_at_n(...) 									define_alias_function_macro(buf_set_at_n, __VA_ARGS__)
