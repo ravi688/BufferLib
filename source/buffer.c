@@ -511,6 +511,13 @@ function_signature(BUFFER, buf_create_m, void* ptr, buf_ucount_t element_size, b
 	CALLTRACE_RETURN(buffer);
 }
 
+function_signature(bool, buf_is_static, BUFFER* buffer)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	CALLTRACE_RETURN((buffer->info & STATIC_BUFFER) == STATIC_BUFFER);
+}
+
 function_signature(BUFFER*, BUFcreate_object_a, void* bytes, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data)
 {
 	CALLTRACE_BEGIN();
