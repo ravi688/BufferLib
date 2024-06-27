@@ -532,6 +532,7 @@ BUF_API function_signature(BUFFER, buf_create, buf_ucount_t element_size, buf_uc
  * it only operates upon the already supplied memory pointed by 'ptr', so it can't be shrinked or expanded. 
  * calling functions such as buf_fit, or buf_resize may throw assertion failure errors */
 BUF_API function_signature(BUFFER, buf_create_m, void* ptr, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data);
+BUF_API function_signature(bool, buf_is_static, BUFFER* buffer);
 BUF_API function_signature(void, buf_fit, BUFFER* buffer);
 BUF_API function_signature(void, buf_peek, BUFFER* buffer, void* out_value);
 BUF_API function_signature(void*, buf_peek_ptr, BUFFER* buffer);
@@ -656,6 +657,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_create_a(...) 									define_alias_function_macro(buf_create_a, __VA_ARGS__)
 #define buf_create(...) 										define_alias_function_macro(buf_create, __VA_ARGS__)
 #define buf_create_m(...)										define_alias_function_macro(buf_create_m, __VA_ARGS__)
+#define buf_is_static(...)									define_alias_function_macro(buf_is_static, __VA_ARGS__)
 #define buf_get_at(...) 										define_alias_function_macro(buf_get_at, __VA_ARGS__)
 #define buf_set_at(...) 										define_alias_function_macro(buf_set_at, __VA_ARGS__)
 #define buf_set_at_n(...) 									define_alias_function_macro(buf_set_at_n, __VA_ARGS__)
