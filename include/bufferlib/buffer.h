@@ -506,6 +506,7 @@ BUF_API function_signature(void, BUFclear_buffer, void* clear_value);
 BUF_API function_signature_void(bool, BUFis_auto_managed);
 BUF_API function_signature_void(buf_ucount_t, BUFget_capacity);
 BUF_API function_signature_void(void*, BUFget_ptr);
+BUF_API function_signature_void(void*, BUFget_ptr_end);
 BUF_API function_signature_void(buf_ucount_t, BUFget_element_count);
 BUF_API function_signature_void(buf_ucount_t, BUFget_offset);
 BUF_API function_signature_void(void*, BUFget_offset_bytes);
@@ -575,6 +576,7 @@ BUF_API function_signature(void, buf_clear_buffer, BUFFER* buffer, void* clear_v
 BUF_API function_signature(bool, buf_is_auto_managed, BUFFER* buffer);
 BUF_API function_signature(buf_ucount_t, buf_get_capacity, BUFFER* buffer);
 BUF_API function_signature(void*, buf_get_ptr, BUFFER* buffer);
+BUF_API function_signature(void*, buf_get_ptr_end, BUFFER* buffer);
 BUF_API function_signature(buf_ucount_t, buf_get_element_count, BUFFER* buffer);
 BUF_API function_signature(buf_ucount_t, buf_get_offset, BUFFER* buffer);
 BUF_API function_signature(void*, buf_get_offset_bytes, BUFFER* buffer);
@@ -628,6 +630,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define BUFset_element_size(...)   					define_alias_function_macro(BUFset_element_size, __VA_ARGS__)
 #define BUFset_ptr(...)   									define_alias_function_macro(BUFset_ptr, __VA_ARGS__)
 #define BUFget_ptr()    										define_alias_function_void_macro(BUFget_ptr)
+#define BUFget_ptr_end()    								define_alias_function_void_macro(BUFget_ptr_end)
 #define BUFpeek(...) 												define_alias_function_macro(BUFpeek, __VA_ARGS__)
 #define BUFcopy_to(...)  										define_alias_function_macro(BUFcopy_to, __VA_ARGS__)
 #define BUFmove_to(...)    									define_alias_function_macro(BUFmove_to, __VA_ARGS__)
@@ -696,6 +699,7 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_set_element_size(...)   				define_alias_function_macro(buf_set_element_size, __VA_ARGS__)
 #define buf_set_ptr(...)   									define_alias_function_macro(buf_set_ptr, __VA_ARGS__)
 #define buf_get_ptr(...) 										define_alias_function_macro(buf_get_ptr, __VA_ARGS__)
+#define buf_get_ptr_end(...) 								define_alias_function_macro(buf_get_ptr_end, __VA_ARGS__)
 #define buf_peek(...) 											define_alias_function_macro(buf_peek, __VA_ARGS__)
 #define buf_copy_to(...)  									define_alias_function_macro(buf_copy_to, __VA_ARGS__)
 #define buf_move_to(...)    								define_alias_function_macro(buf_move_to, __VA_ARGS__)
@@ -736,6 +740,8 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_get_count(buffer) buf_get_element_count(buffer)
 #define buf_create_byte_buffer(capacity) buf_create(1, capacity, 0)
 #define BUFnew(element_size, capacity, offset) BUFcreate_new(NULL, element_size, capacity, offset)
+#define buf_for_each_element_ptr(element_type, var_name, buf_ptr) \
+	for(element_type* var_name = CAST_TO(element_type*, buf_get_ptr(buf_ptr)); var_name < CAST_TO(element_type*, buf_get_ptr_end(buf_ptr)); ++var_name)
 
 #define buf_vprintf(...) define_alias_function_macro(buf_vprintf, __VA_ARGS__)
 #define buf_printf(...) define_alias_function_macro(buf_printf, __VA_ARGS__)

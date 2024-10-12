@@ -247,6 +247,14 @@ function_signature(void*, buf_get_ptr, BUFFER* buffer)
 	CALLTRACE_RETURN(buffer->bytes);
 }
 
+function_signature_void(void*, BUFget_ptr_end) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_get_ptr_end(binded_buffer)); }
+function_signature(void*, buf_get_ptr_end, BUFFER* buffer)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	CALLTRACE_RETURN(buffer->bytes + buffer->element_count * buffer->element_size);
+}
+
 function_signature(void, BUFset_offset, buf_ucount_t offset) { CALLTRACE_BEGIN(); buf_set_offset(binded_buffer, offset); CALLTRACE_END(); }
 function_signature(void, buf_set_offset, BUFFER* buffer, buf_ucount_t offset)
 {
