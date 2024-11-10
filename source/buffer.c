@@ -29,7 +29,7 @@
 
 
 #ifdef BUF_DEBUG
-#	define GOOD_ASSERT(bool_value, string) do { if(!(bool_value)) {  log_fetal_err("Assertion Failed: %s\n", string); } } while(false)
+#	define GOOD_ASSERT(bool_value, string) do { if(!(bool_value)) {  log_err("Assertion Failed: %s\n", string); __builtin_trap(); } } while(false)
 	static void check_pre_condition(BUFFER* buffer);
 #else
 #	define GOOD_ASSERT(...)
