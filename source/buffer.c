@@ -231,6 +231,30 @@ function_signature(buf_ucount_t, buf_get_element_count, BUFFER* buffer)
 	CALLTRACE_RETURN(buffer->element_count);
 }
 
+function_signature_void(buf_malloc_t, BUFget_malloc_callback) { CALLTRACE_BEGIN(); CALLTRACE_RETURN( buf_get_malloc_callback(binded_buffer)); }
+function_signature(buf_malloc_t, buf_get_malloc_callback, BUFFER* buffer)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	CALLTRACE_RETURN(buffer->mem_malloc);
+}
+
+function_signature_void(buf_free_t, BUFget_free_callback) { CALLTRACE_BEGIN(); CALLTRACE_RETURN( buf_get_free_callback(binded_buffer)); }
+function_signature(buf_free_t, buf_get_free_callback, BUFFER* buffer)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	CALLTRACE_RETURN(buffer->mem_free);
+}
+
+function_signature_void(buf_realloc_t, BUFget_realloc_callback) { CALLTRACE_BEGIN(); CALLTRACE_RETURN( buf_get_realloc_callback(binded_buffer)); }
+function_signature(buf_realloc_t, buf_get_realloc_callback, BUFFER* buffer)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	CALLTRACE_RETURN(buffer->mem_realloc);
+}
+
 function_signature_void(buf_ucount_t, BUFget_element_size) { CALLTRACE_BEGIN(); CALLTRACE_RETURN(buf_get_element_size(binded_buffer)); }
 function_signature(buf_ucount_t, buf_get_element_size, BUFFER* buffer)
 {
@@ -543,27 +567,25 @@ function_signature(bool, buf_is_readonly, BUFFER* buffer)
 	CALLTRACE_RETURN((buffer->info & READONLY_BUFFER) == READONLY_BUFFER);
 }
 
-function_signature(BUFFER*, BUFcreate_object_a, void* bytes, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data)
+static void* buf_default_malloc(buf_ucount_t size, void* user_data)
 {
-	CALLTRACE_BEGIN();
-	BUFcreate_object(bytes);
-	BUFFER* buffer = bytes;
-	buffer->mem_malloc = _malloc;
-	buffer->mem_free = _free;
-	buffer->mem_realloc = _realloc;
-	buffer->user_data = user_data;
-	CALLTRACE_RETURN(buffer);
+	return malloc(size);
 }
 
-//TODO: Replace the name with BUFcreate_object_from_bytes
-function_signature(BUFFER*, BUFcreate_object, void* bytes)
+static void* buf_default_realloc(void* prev_ptr, buf_ucount_t new_size, void* user_data)
 {
-	CALLTRACE_BEGIN();
-	GOOD_ASSERT(bytes != NULL, "bytes equals to NULL");
-	BUFFER* buffer = bytes;
+	return realloc(prev_ptr, new_size);
+}
+
+static void buf_default_free(void* ptr, void* user_data)
+{
+	free(ptr);
+}
+
+static void initialize_buffer_object(buffer_t* buffer, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data)
+{
 	buffer->bytes = NULL;
 	buffer->info = 0x00;
-	buffer->info |= STACK_ALLOCATED_OBJECT;
 	buffer->element_size = 0;
 	buffer->element_count = 0;
 	buffer->capacity = 0;
@@ -573,14 +595,40 @@ function_signature(BUFFER*, BUFcreate_object, void* bytes)
 	buffer->on_post_resize = NULL;
 	buffer->offset = 0;
 	buffer->free = NULL;
-	buffer->mem_malloc = NULL;
-	buffer->mem_free = NULL;
-	buffer->mem_realloc = NULL;
-	buffer->user_data = NULL;
+	buffer->mem_malloc = _malloc ? _malloc : buf_default_malloc;
+	buffer->mem_free = _free ? _free : buf_default_free;
+	buffer->mem_realloc = _realloc ? _realloc : buf_default_realloc;
+	buffer->user_data = user_data;
 #ifdef BUF_DEBUG
 	buffer->is_ptr_queried = false;
-#endif /* BUF_DEBUG */
+#endif /* BUF_DEBUG */	
+}
+
+function_signature(BUFFER*, BUFcreate_object_a, void* bytes, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data)
+{
+	CALLTRACE_BEGIN();
+	GOOD_ASSERT(bytes != NULL, "bytes equals to NULL");
+	BUFFER* buffer = bytes;
+	initialize_buffer_object(buffer, _malloc, _free, _realloc, user_data);
+	buffer->info |= STACK_ALLOCATED_OBJECT;
 	CALLTRACE_RETURN(buffer);
+}
+
+//TODO: Replace the name with BUFcreate_object_from_bytes
+function_signature(BUFFER*, BUFcreate_object, void* bytes)
+{
+	CALLTRACE_BEGIN();
+	BUFFER* buffer = BUFcreate_object_a(bytes, NULL, NULL, NULL, NULL);
+	CALLTRACE_RETURN(buffer);
+}
+
+static buffer_t* create_buffer_object(buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data)
+{
+	buffer_t* buffer = (_malloc != NULL) ? _malloc(sizeof(BUFFER), user_data) : buf_default_malloc(sizeof(BUFFER), NULL);
+	GOOD_ASSERT(buffer != NULL, "Memory Allocation Failure Exception");
+	initialize_buffer_object(buffer, _malloc, _free, _realloc, user_data);
+	buffer->info |= HEAP_ALLOCATED_OBJECT;
+	return buffer;
 }
 
 function_signature(BUFFER*, BUFcreate_a, BUFFER* buffer, buf_ucount_t element_size, buf_ucount_t capacity, buf_ucount_t offset, buf_malloc_t _malloc, buf_free_t _free, buf_realloc_t _realloc, void* user_data)
@@ -590,24 +638,7 @@ function_signature(BUFFER*, BUFcreate_a, BUFFER* buffer, buf_ucount_t element_si
 	GOOD_ASSERT(((int64_t)capacity) >= 0, "capacity cannot be negative");
 	GOOD_ASSERT(((int64_t)offset) >= 0, "offset cannot be negative");
 	if(buffer == NULL)
-	{
-		buffer = (_malloc != NULL) ? _malloc(sizeof(BUFFER), user_data) : malloc(sizeof(BUFFER));
-		GOOD_ASSERT(buffer != NULL, "Memory Allocation Failure Exception");
-		buffer->info = 0x00;
-		buffer->info |= HEAP_ALLOCATED_OBJECT;
-		buffer->auto_managed_empty_blocks = NULL;
-		buffer->is_auto_managed = false;
-		buffer->on_pre_resize = NULL;
-		buffer->on_post_resize = NULL;
-		buffer->free = NULL;
-		buffer->mem_malloc = _malloc;
-		buffer->mem_free = _free;
-		buffer->mem_realloc = _realloc;
-		buffer->user_data = user_data;
-	#ifdef BUF_DEBUG
-		buffer->is_ptr_queried = false;
-	#endif /* BUF_DEBUG */
-	}
+		buffer = create_buffer_object(_malloc, _free, _realloc, user_data);
 	if((capacity > 0) || (offset > 0))
 	{
 		buf_ucount_t alloc_size = element_size * capacity + offset;
@@ -637,24 +668,7 @@ function_signature(BUFFER*, BUFcreate_m, BUFFER* buffer, void* ptr, buf_ucount_t
 	GOOD_ASSERT(((int64_t)offset) >= 0, "offset cannot be negative");
 	GOOD_ASSERT(ptr != NULL, "pointer to map to can't be NULL");
 	if(buffer == NULL)
-	{
-		buffer = (_malloc != NULL) ? _malloc(sizeof(BUFFER), user_data) : malloc(sizeof(BUFFER));
-		GOOD_ASSERT(buffer != NULL, "Memory Allocation Failure Exception");
-		buffer->info = 0x00;
-		buffer->info |= HEAP_ALLOCATED_OBJECT;
-		buffer->auto_managed_empty_blocks = NULL;
-		buffer->is_auto_managed = false;
-		buffer->on_pre_resize = NULL;
-		buffer->on_post_resize = NULL;
-		buffer->free = NULL;
-		buffer->mem_malloc = _malloc;
-		buffer->mem_free = _free;
-		buffer->mem_realloc = _realloc;
-		buffer->user_data = user_data;
-	#ifdef BUF_DEBUG
-		buffer->is_ptr_queried = false;
-	#endif /* BUF_DEBUG */
-	}
+		buffer = create_buffer_object(_malloc, _free, _realloc, user_data);
 	buffer->info |= STATIC_BUFFER;
 	buffer->bytes = ptr;
 	buffer->element_size = element_size;

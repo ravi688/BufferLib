@@ -508,6 +508,9 @@ BUF_API function_signature_void(buf_ucount_t, BUFget_capacity);
 BUF_API function_signature_void(void*, BUFget_ptr);
 BUF_API function_signature_void(void*, BUFget_ptr_end);
 BUF_API function_signature_void(buf_ucount_t, BUFget_element_count);
+BUF_API function_signature_void(buf_malloc_t, BUFget_malloc_callback);
+BUF_API function_signature_void(buf_free_t, BUFget_free_callback);
+BUF_API function_signature_void(buf_realloc_t, BUFget_realloc_callback);
 BUF_API function_signature_void(buf_ucount_t, BUFget_offset);
 BUF_API function_signature_void(void*, BUFget_offset_bytes);
 BUF_API function_signature_void(buf_ucount_t, BUFget_element_size);
@@ -578,6 +581,9 @@ BUF_API function_signature(buf_ucount_t, buf_get_capacity, BUFFER* buffer);
 BUF_API function_signature(void*, buf_get_ptr, BUFFER* buffer);
 BUF_API function_signature(void*, buf_get_ptr_end, BUFFER* buffer);
 BUF_API function_signature(buf_ucount_t, buf_get_element_count, BUFFER* buffer);
+BUF_API function_signature(buf_malloc_t, buf_get_malloc_callback, BUFFER* buffer);
+BUF_API function_signature(buf_free_t, buf_get_free_callback, BUFFER* buffer);
+BUF_API function_signature(buf_realloc_t, buf_get_realloc_callback, BUFFER* buffer);
 BUF_API function_signature(buf_ucount_t, buf_get_offset, BUFFER* buffer);
 BUF_API function_signature(void*, buf_get_offset_bytes, BUFFER* buffer);
 BUF_API function_signature(buf_ucount_t, buf_get_element_size, BUFFER* buffer);
@@ -648,6 +654,9 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define BUFfree_except_data() 													define_alias_function_void_macro(BUFfree_except_data)
 #define BUFget_element_count() 							define_alias_function_void_macro(BUFget_element_count)
 #define BUFget_element_size() 							define_alias_function_void_macro(BUFget_element_size)
+#define BUFget_malloc_callback() 						define_alias_function_void_macro(BUFget_malloc_callback)
+#define BUFget_free_callback() 							define_alias_function_void_macro(BUFget_free_callback)
+#define BUFget_realloc_callback() 					define_alias_function_void_macro(BUFget_realloc_callback)
 #define BUFget_clone() 											define_alias_function_void_macro(BUFget_clone)
 #define BUFget_offset() 										define_alias_function_void_macro(BUFget_offset)
 #define BUFis_auto_managed()  							define_alias_function_void_macro(BUFis_auto_managed)
@@ -715,6 +724,9 @@ BUF_API function_signature(void, buf_set_on_pre_resize, BUFFER* buffer, void (*o
 #define buf_free_except_data(...)						define_alias_function_macro(buf_free_except_data, __VA_ARGS__)
 #define buf_get_element_count(...) 					define_alias_function_macro(buf_get_element_count, __VA_ARGS__)
 #define buf_get_element_size(...) 					define_alias_function_macro(buf_get_element_size, __VA_ARGS__)
+#define buf_get_malloc_callback(...) 				define_alias_function_macro(buf_get_malloc_callback, __VA_ARGS__)
+#define buf_get_free_callback(...) 					define_alias_function_macro(buf_get_free_callback, __VA_ARGS__)
+#define buf_get_realloc_callback(...) 			define_alias_function_macro(buf_get_realloc_callback, __VA_ARGS__)
 #define buf_get_clone(...) 									define_alias_function_macro(buf_get_clone, __VA_ARGS__)
 #define buf_get_offset(...) 								define_alias_function_macro(buf_get_offset, __VA_ARGS__)
 #define buf_is_auto_managed(...)  					define_alias_function_macro(buf_is_auto_managed, __VA_ARGS__)
