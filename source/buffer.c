@@ -231,6 +231,13 @@ function_signature(buf_ucount_t, buf_get_element_count, BUFFER* buffer)
 	CALLTRACE_RETURN(buffer->element_count);
 }
 
+function_signature(void*, buf_get_malloc_callback_user_data, BUFFER* buffer)
+{
+	CALLTRACE_BEGIN();
+	check_pre_condition(buffer);
+	CALLTRACE_RETURN(buffer->user_data);
+}
+
 function_signature_void(buf_malloc_t, BUFget_malloc_callback) { CALLTRACE_BEGIN(); CALLTRACE_RETURN( buf_get_malloc_callback(binded_buffer)); }
 function_signature(buf_malloc_t, buf_get_malloc_callback, BUFFER* buffer)
 {
