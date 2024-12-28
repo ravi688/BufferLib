@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define LOG(log_string) printf("[Log] %s, at %s, line: %lu\n", log_string, __FUNCTION__, __LINE__)
 #if defined(ASSERT)
@@ -692,6 +693,73 @@ void test_buf_insert_pseudo(bool* out_result)
 	buf_free(&buffer);
 }
 
+void test_buf_sort(bool* out_result)
+{
+	srand(time(0));
+	buffer_t b = buf_new(int);
+	for(u32 i = 0; i < 1000; ++i)
+	{
+		int value = rand();
+		buf_push(&b, &value);
+	}
+	buf_sort(&b, buf_s32_less_than, NULL);
+	int prev_value;
+	buf_get_at(&b, 0, &prev_value);
+	for(buf_ucount_t i = 1; i < buf_get_element_count(&b); ++i)
+	{
+		int value;
+		buf_get_at(&b, i, &value);
+		if(prev_value > value)
+		{
+			*out_result = false;
+			buf_free(&b);
+			return;
+		}
+		prev_value = value;
+	}
+	buf_clear(&b, NULL);
+	srand(time(0));
+	for(u32 i = 0; i < 1000; ++i)
+	{
+		int value = rand();
+		buf_push(&b, &value);
+	}
+	buf_sort(&b, buf_s32_greater_than, NULL);
+	buf_get_at(&b, 0, &prev_value);
+	for(buf_ucount_t i = 1; i < buf_get_element_count(&b); ++i)
+	{
+		int value = buf_get_at_typeof(&b, int, i);
+		if(prev_value < value)
+		{
+			*out_result = false;
+			buf_free(&b);
+			return;
+		}
+		prev_value = value;
+	}
+	buf_clear(&b, NULL);
+	srand(time(0));
+	for(u32 i = 0; i < 1000; ++i)
+	{
+		int value = rand();
+		buf_push_sort(&b, &value, buf_s32_greater_than, NULL);
+	}
+	buf_get_at(&b, 0, &prev_value);
+	for(buf_ucount_t i = 1; i < buf_get_element_count(&b); ++i)
+	{
+		int value = buf_get_at_typeof(&b, int, i);
+		if(prev_value < value)
+		{
+			*out_result = false;
+			buf_free(&b);
+			return;
+		}
+		prev_value = value;
+	}
+	*out_result = true;
+	buf_free(&b);
+}
+
 static bool compare_int(int* i1, int* i2)
 {
 	return *i1 == *i2;
@@ -875,6 +943,13 @@ bool BUFstart_testing(BUFFERTest* test)
 	/*-------------------------buf_insert_pseudo----------------------*/
 	LOG_TEST(test_count, "buf_insert_pseudo"); test_count++;
 	test_buf_insert_pseudo(&result);
+	LOG_RESULT(result);
+	/*----------------------------------------------------------------*/
+
+
+	/*-------------------------buf_insert_pseudo----------------------*/
+	LOG_TEST(test_count, "buf_sort"); test_count++;
+	test_buf_sort(&result);
 	LOG_RESULT(result);
 	/*----------------------------------------------------------------*/
 
