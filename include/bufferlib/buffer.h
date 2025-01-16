@@ -313,34 +313,11 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 
 #pragma once
 
-#if defined(GLOBAL_DEBUG) && !defined(BUF_DEBUG)
-#define BUF_DEBUG
-#endif
+#include <bufferlib/defines.h>
 
-#if defined(GLOBAL_RELEASE) && !defined(BUF_RELEASE)
-#define BUF_RELEASE
-#endif
-
-#if defined(BUF_RELEASE) && defined(BUF_DEBUG)
-#	warning "Both of BUF_RELEASE && BUF_DEBUG are defined; using BUF_DEBUG"
-# undef BUF_RELEASE
-#elif !defined(BUF_RELEASE) && !defined(BUF_DEBUG)
-#	warning "None of BUF_RELEASE && BUF_DEBUG is defined; using BUF_DEBUG"
-#	define BUF_DEBUG
-#endif
-
-#ifdef BUF_DEBUG
-#	ifndef CALLTRACE_DEBUG
-#		define CALLTRACE_DEBUG
-#	endif
-#elif defined(BUF_RELEASE)
-#	ifndef CALLTRACE_RELEASE
-#		define CALLTRACE_RELEASE
-#	endif
-#endif
+#define CALLTRACE_USE_STATIC_LIBRARY
 #include <calltrace/calltrace.h>
 
-#include <bufferlib/defines.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdarg.h>
