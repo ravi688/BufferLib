@@ -315,7 +315,6 @@ New Feature and Performance improvement request, must be implemented in BUFFERli
 
 #include <bufferlib/defines.h>
 
-#define CALLTRACE_USE_STATIC_LIBRARY
 #include <calltrace/calltrace.h>
 
 #include <stdint.h>

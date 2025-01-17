@@ -8,7 +8,9 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <inttypes.h> /* for PRI* macros */
-#include <alloca.h>
+#if defined(__linux__)
+#	include <alloca.h> /* for alloca() */
+#endif
 
 #ifdef log_fetal_error
 #	undef log_fetal_error
