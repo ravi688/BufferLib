@@ -59,13 +59,23 @@ debug_defines = [
 ]
 
 # Shared Library Build Defines
-shared_library_defines = [
+shared_library_build_defines = [
   '-DBUF_BUILD_DYNAMIC_LIBRARY'
 ]
 
+# Shared Library Use Defines
+shared_library_use_defines = [
+  '-DBUF_USE_DYNAMIC_LIBRARY'
+]
+
 # Static Library Build Defines
-static_library_defines = [
+static_library_build_defines = [
   '-DBUF_BUILD_STATIC_LIBRARY'
+]
+
+# Static Library Use Defines
+static_library_use_defines = [
+  '-DBUF_USE_STATIC_LIBRARY'
 ]
 
 # Source files (excluding main.c)
@@ -118,8 +128,8 @@ static_lib = static_library('bufferlib_static',
   include_directories : inc,
   install : true,
   install_dir : get_option('libdir')/lc_project_name,
-  c_args : static_library_defines,
-  cpp_args : static_library_defines,
+  c_args : static_library_build_defines,
+  cpp_args : static_library_build_defines,
   gnu_symbol_visibility: 'hidden'
 )
 
@@ -137,8 +147,8 @@ shared_lib = shared_library('bufferlib_shared',
   include_directories : inc,
   install : true,
   install_dir : get_option('libdir')/lc_project_name,
-  c_args : shared_library_defines,
-  cpp_args : shared_library_defines,
+  c_args : shared_library_build_defines,
+  cpp_args : shared_library_build_defines,
   gnu_symbol_visibility: 'hidden'
 )
 
@@ -159,19 +169,31 @@ python = find_program('python')
 # Try PKG_CONFIG_PATH first, typicallly it succeeds on MINGW64 (MSYS2)
 result = run_command(python, '-c', 'import os; print(os.environ["PKG_CONFIG_PATH"])', check : false)
 if result.returncode() == 0
-  pkgconfig_install_path = result.stdout().replace(';', ':').split(':')[0]
-else
-	# Otherwise use pkg-config to query its lookup directories
-	message('PKG_CONFIG_PATH seems to be empty, trying another method')
-	result = run_command('pkg-config', '--variable', 'pc_path', 'pkg-config', check : false)
-	if result.returncode() == 0
-		pkgconfig_install_path = result.stdout().replace(';', ':').split(':')[0]
-	# Finally if the above attempts fail, use 'libdir' value
-	else
-		pkgconfig_install_path = get_option('libdir')
-	endif
+  str = result.stdout()
+  # Unix
+  if str.startswith('/')
+    pkgconfig_install_path = str.replace(';', ':').split(':')[0]
+  # Windows
+  else
+    pkgconfig_install_path = str.replace(';', ':').split(':')[1]
+  endif
 endif
-
+if pkgconfig_install_path == ''
+  # Otherwise use pkg-config to query its lookup directories
+  message('PKG_CONFIG_PATH seems to be empty, trying another method')
+  result = run_command('pkg-config', '--variable', 'pc_path', 'pkg-config', check : false)
+  if result.returncode() == 0
+    str = result.stdout()
+    if str.startswith('/')
+      pkgconfig_install_path = str.replace(';', ':').split(':')[0]
+    else
+      pkgconfig_install_path = str.replace(';', ':').split(':')[1]
+    endif
+  # Finally if the above attempts fail, use 'libdir' value
+  else
+    pkgconfig_install_path = get_option('libdir')
+  endif
+endif
 message('pkg config path: ' + pkgconfig_install_path)
 
 pkgmod = import('pkgconfig')
@@ -180,12 +202,20 @@ pkgmod.generate(static_lib,
     name: get_option('project_name'),
     description: 'A function call trace library',
     filebase: 'bufferlib_static',
-    install_dir: pkgconfig_install_path
+    install_dir: pkgconfig_install_path,
+    extra_cflags: static_library_use_defines + build_mode_defines
 )
 # Generate .pc file for shared library
 pkgmod.generate(shared_lib,
     name: get_option('project_name'),
     description: 'A function call trace library',
     filebase: 'bufferlib_shared',
-    install_dir: pkgconfig_install_path
+    install_dir: pkgconfig_install_path,
+    extra_cflags: shared_library_use_defines + build_mode_defines
+)
+
+bufferlib_dep = declare_dependency(
+    link_with: static_lib,
+    include_directories: inc,
+    compile_args: static_library_use_defines + build_mode_defines
 )
