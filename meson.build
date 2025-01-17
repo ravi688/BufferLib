@@ -175,7 +175,7 @@ if result.returncode() == 0
     pkgconfig_install_path = str.replace(';', ':').split(':')[0]
   # Windows
   else
-    pkgconfig_install_path = str.replace(';', ':').split(':')[1]
+    pkgconfig_install_path = str.split(';')[0]
   endif
 endif
 if pkgconfig_install_path == ''
@@ -187,7 +187,7 @@ if pkgconfig_install_path == ''
     if str.startswith('/')
       pkgconfig_install_path = str.replace(';', ':').split(':')[0]
     else
-      pkgconfig_install_path = str.replace(';', ':').split(':')[1]
+      pkgconfig_install_path = str.split(';')[0]
     endif
   # Finally if the above attempts fail, use 'libdir' value
   else
