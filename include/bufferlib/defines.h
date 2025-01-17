@@ -13,11 +13,11 @@
 */
 
 #if (defined _WIN32 || defined __CYGWIN__) && defined(__GNUC__)
-#	define BUF_IMPORT_API __attribute__((visibility("default")))
-#	define BUF_EXPORT_API __attribute__((visibility("default")))
-#else
 #	define BUF_IMPORT_API __declspec(dllimport)
 #	define BUF_EXPORT_API __declspec(dllexport)
+#else
+#	define BUF_IMPORT_API __attribute__((visibility("default")))
+#	define BUF_EXPORT_API __attribute__((visibility("default")))
 #endif
 
 #ifdef BUF_BUILD_STATIC_LIBRARY

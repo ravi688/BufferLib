@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <inttypes.h> /* for PRI* macros */
+#include <alloca.h>
 
 #ifdef log_fetal_error
 #	undef log_fetal_error
