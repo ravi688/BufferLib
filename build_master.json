@@ -1,0 +1,37 @@
+{
+    "project_name" : "BufferLib",
+    "canonical_name" : "bufferlib",
+    "description" : "A memory buffer library",
+    "dependencies" : [ "calltrace" ],
+    "release_defines": [ "-DBUF_RELEASE" ],
+    "debug_defines": [ "-DBUF_DEBUG" ],
+    "install_header_dirs" : [ "include/bufferlib" ],
+    "include_dirs" : [ "include" ],
+    "targets" :
+    [
+        {
+            "name" : "bufferlib_static",
+            "is_static_library" : true,
+            "description" : "Static Library for BufferLib",
+            "build_defines" : [ "-DBUF_BUILD_STATIC_LIBRARY" ],
+            "use_defines" : [ "-DBUF_USE_STATIC_LIBRARY" ]
+        }, 
+        {
+            "name" : "bufferlib_shared",
+            "is_shared_library" : true,
+            "build_defines" : [ "-DBUF_BUILD_SHARED_LIBRARY" ],
+            "use_defines" : [ "-DBUF_USE_SHARED_LIBRARY" ]
+        },
+        {
+            "name" : "main",
+            "is_executable" : true,
+            "sources" : [ "source/main.c", "source/buffer_test.c" ]
+        }
+    ],
+    // These source files will be compiled in each target as common source files
+    "sources" :
+    [
+        "source/buffer.c",
+        "source/buffer_test.c"
+    ]
+}

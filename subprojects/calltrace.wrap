@@ -4,4 +4,4 @@ revision = head
 depth = 1
 
 [provide]
-calltrace = calltrace_dep
+calltrace = calltrace_static_dep
