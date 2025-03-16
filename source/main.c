@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 #ifdef BUF_DEBUG
-#	define GOOD_ASSERT(bool_value, string) do { if(!(bool_value)) {  log_fetal_err("Assertion Failed: %s\n", string); } } while(false)
+#	define GOOD_ASSERT(bool_value, string) do { if(!(bool_value)) {  printf("Assertion Failed: %s\n", string); exit(EXIT_FAILURE); } } while(false)
 #else
 #	define GOOD_ASSERT(...)
 #endif
@@ -19,8 +19,7 @@ void print_ptr(void* ptr)
 	printf("%d ", *(int*)ptr); 
 }
 
-#define read_file(...) define_alias_function_macro(read_file, __VA_ARGS__)
-function_signature(BUFFER*, read_file, const char* file_name)
+BUFFER* read_file(const char* file_name)
 {
     BUFpush_binded();
     FILE* file = fopen(file_name, "r");

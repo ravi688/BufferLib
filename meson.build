@@ -83,7 +83,7 @@ lib_install_dir_bm_internal__ = get_option('libdir')/'bufferlib'
 
 # Dependencies
 dependencies_bm_internal__ = [
-dependency('calltrace')
+
 ]
 
 # Linker Arguments
@@ -117,15 +117,15 @@ add_project_link_arguments('-m64', link_args_bm_internal__, language : 'c')
 add_project_link_arguments('-m64', link_args_bm_internal__, language : 'cpp')
 
 # Build type specific defines
-build_mode_defines_bm_internal__ = defines_bm_internal__
+project_build_mode_defines_bm_internal__ = defines_bm_internal__
 if get_option('buildtype') == 'release'
   add_project_arguments(release_defines_bm_internal__, language : 'c')
   add_project_arguments(release_defines_bm_internal__, language : 'cpp')
-  build_mode_defines_bm_internal__ += release_defines_bm_internal__
+  project_build_mode_defines_bm_internal__ += release_defines_bm_internal__
 else
   add_project_arguments(debug_defines_bm_internal__, language : 'c')
   add_project_arguments(debug_defines_bm_internal__, language : 'cpp')
-  build_mode_defines_bm_internal__ += debug_defines_bm_internal__
+  project_build_mode_defines_bm_internal__ += debug_defines_bm_internal__
 endif
 
 # pkg-config package installation
@@ -191,22 +191,22 @@ bufferlib_static = static_library('bufferlib_static',
 	include_directories: [inc_bm_internal__, bufferlib_static_include_dirs_bm_internal__],
 	install: true,
 	install_dir: lib_install_dir_bm_internal__,
-	c_args: bufferlib_static_build_defines_bm_internal__,
-	cpp_args: bufferlib_static_build_defines_bm_internal__, 
+	c_args: bufferlib_static_build_defines_bm_internal__ + project_build_mode_defines_bm_internal__,
+	cpp_args: bufferlib_static_build_defines_bm_internal__ + project_build_mode_defines_bm_internal__, 
 	link_args: bufferlib_static_link_args_bm_internal__[host_machine.system()],
 	gnu_symbol_visibility: 'hidden'
 )
 bufferlib_static_dep = declare_dependency(
 	link_with: bufferlib_static,
 	include_directories: [inc_bm_internal__, bufferlib_static_include_dirs_bm_internal__],
-	compile_args: bufferlib_static_use_defines_bm_internal__ + build_mode_defines_bm_internal__
+	compile_args: bufferlib_static_use_defines_bm_internal__ + project_build_mode_defines_bm_internal__
 )
 pkgmod.generate(bufferlib_static,
 	name: 'BufferLib',
 	description: 'Static Library for BufferLib',
 	filebase: 'bufferlib_static',
 	install_dir: pkgconfig_install_path_bm_internal__,
-	extra_cflags: bufferlib_static_use_defines_bm_internal__ + build_mode_defines_bm_internal__
+	extra_cflags: bufferlib_static_use_defines_bm_internal__ + project_build_mode_defines_bm_internal__
 )
 
 # -------------- Target: bufferlib_shared ------------------
@@ -236,22 +236,22 @@ bufferlib_shared = shared_library('bufferlib_shared',
 	include_directories: [inc_bm_internal__, bufferlib_shared_include_dirs_bm_internal__],
 	install: true,
 	install_dir: lib_install_dir_bm_internal__,
-	c_args: bufferlib_shared_build_defines_bm_internal__,
-	cpp_args: bufferlib_shared_build_defines_bm_internal__, 
+	c_args: bufferlib_shared_build_defines_bm_internal__ + project_build_mode_defines_bm_internal__,
+	cpp_args: bufferlib_shared_build_defines_bm_internal__ + project_build_mode_defines_bm_internal__, 
 	link_args: bufferlib_shared_link_args_bm_internal__[host_machine.system()],
 	gnu_symbol_visibility: 'hidden'
 )
 bufferlib_shared_dep = declare_dependency(
 	link_with: bufferlib_shared,
 	include_directories: [inc_bm_internal__, bufferlib_shared_include_dirs_bm_internal__],
-	compile_args: bufferlib_shared_use_defines_bm_internal__ + build_mode_defines_bm_internal__
+	compile_args: bufferlib_shared_use_defines_bm_internal__ + project_build_mode_defines_bm_internal__
 )
 pkgmod.generate(bufferlib_shared,
 	name: 'BufferLib',
 	description: 'A memory buffer library',
 	filebase: 'bufferlib_shared',
 	install_dir: pkgconfig_install_path_bm_internal__,
-	extra_cflags: bufferlib_shared_use_defines_bm_internal__ + build_mode_defines_bm_internal__
+	extra_cflags: bufferlib_shared_use_defines_bm_internal__ + project_build_mode_defines_bm_internal__
 )
 
 # -------------- Target: main ------------------
@@ -278,8 +278,8 @@ main = executable('main',
 	dependencies: dependencies_bm_internal__ + main_dependencies_bm_internal__,
 	include_directories: [inc_bm_internal__, main_include_dirs_bm_internal__],
 	install: false,
-	c_args: main_defines_bm_internal__,
-	cpp_args: main_defines_bm_internal__, 
+	c_args: main_defines_bm_internal__ + project_build_mode_defines_bm_internal__,
+	cpp_args: main_defines_bm_internal__ + project_build_mode_defines_bm_internal__, 
 	link_args: main_link_args_bm_internal__[host_machine.system()],
 	gnu_symbol_visibility: 'hidden'
 )
@@ -289,4 +289,5 @@ main = executable('main',
 #--------------------------------Header Intallation----------------------------------
 # Header installation
 install_subdir('include/bufferlib', install_dir : get_option('includedir'))
+
 
