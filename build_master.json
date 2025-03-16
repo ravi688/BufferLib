@@ -2,7 +2,6 @@
     "project_name" : "BufferLib",
     "canonical_name" : "bufferlib",
     "description" : "A memory buffer library",
-    "dependencies" : [ "calltrace" ],
     "release_defines": [ "-DBUF_RELEASE" ],
     "debug_defines": [ "-DBUF_DEBUG" ],
     "install_header_dirs" : [ "include/bufferlib" ],

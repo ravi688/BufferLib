@@ -1,7 +1,0 @@
-[wrap-git]
-url = https://github.com/ravi688/calltrace.git
-revision = head
-depth = 1
-
-[provide]
-calltrace = calltrace_static_dep
