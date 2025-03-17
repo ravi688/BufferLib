@@ -172,21 +172,21 @@ void buf_set_auto_managed(BUFFER* buffer, bool value)
  	buffer->is_auto_managed = value;
 }
 
-buf_ucount_t BUFget_offset() { buf_get_offset(binded_buffer); }
+buf_ucount_t BUFget_offset() { return buf_get_offset(binded_buffer); }
 buf_ucount_t buf_get_offset(BUFFER* buffer)
 {
 	check_pre_condition(buffer);
 	return buffer->offset;
 }
 
-buf_ucount_t BUFget_capacity() { buf_get_capacity(binded_buffer); }
+buf_ucount_t BUFget_capacity() { return buf_get_capacity(binded_buffer); }
 buf_ucount_t buf_get_capacity(BUFFER* buffer)
 {
 	check_pre_condition(buffer);
 	return buffer->capacity;
 }
 
-buf_ucount_t BUFget_element_count() {  buf_get_element_count(binded_buffer); }
+buf_ucount_t BUFget_element_count() { return buf_get_element_count(binded_buffer); }
 buf_ucount_t buf_get_element_count(BUFFER* buffer)
 {
 	check_pre_condition(buffer);
@@ -220,7 +220,7 @@ buf_realloc_t buf_get_realloc_callback(BUFFER* buffer)
 	return buffer->mem_realloc;
 }
 
-buf_ucount_t BUFget_element_size() { buf_get_element_size(binded_buffer); }
+buf_ucount_t BUFget_element_size() { return buf_get_element_size(binded_buffer); }
 buf_ucount_t buf_get_element_size(BUFFER* buffer)
 {
 	check_pre_condition(buffer);
@@ -664,7 +664,7 @@ void buf_set_offset_bytes(BUFFER* buffer, void* offset_bytes)
 	memcpy(buf_get_offset_bytes(buffer), offset_bytes, buffer->offset);
 }
 
-buf_ucount_t BUFget_buffer_size() { buf_get_buffer_size(binded_buffer); }
+buf_ucount_t BUFget_buffer_size() { return buf_get_buffer_size(binded_buffer); }
 buf_ucount_t buf_get_buffer_size(BUFFER* buffer)
 {
 	check_pre_condition(buffer);
