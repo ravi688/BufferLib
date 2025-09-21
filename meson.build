@@ -100,9 +100,20 @@ darwin_link_args_bm_internal__ = [
 # -------------------------------------------------------------------------------
 # ------------------------------ FIXTURE ----------------------------------------
 
+project_args_bm_internal__ = [ ]
+
+if host_machine.cpu_family() == 'x86' or host_machine.cpu_family() == 'x86_64'
+  message('Building for x86')
+  project_args_bm_internal__ = [ '-m64' ]
+elif host_machine.cpu_family().startswith('arm') or host_machine.cpu_family() == 'aarch64'
+  message('Building for ARM')
+else
+  message('Unknown architecture: ' + host_machine.cpu_family())
+endif
+
 # Compiler configuration
-add_project_arguments('-m64', language : 'c')
-add_project_arguments('-m64', language : 'cpp')
+add_project_arguments(project_args_bm_internal__, language : 'c')
+add_project_arguments(project_args_bm_internal__, language : 'cpp')
 # Linker configuration
 link_args_bm_internal__ = []
 os_name_bm_internal__ = host_machine.system()
